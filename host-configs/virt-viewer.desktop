@@ -1,0 +1,17 @@
+# This file prevents GNOME from repeatedly asking for permissions to inhibit shortcuts when
+# launching `virt-viewer` from the command line or trough a script.
+#
+# Copy this file to your home directory. Note that the file should not be renamed:
+#   mkdir -p ~/.local/share/applications/
+#   cp ./virt-viewer.desktop ~/.local/share/applications/
+
+[Desktop Entry]
+Name=Virt-Viewer (Workaround)
+Comment=This file only exists to store shortcut inhibitor prefs in flatpaks permission store.
+Exec=virt-viewer %u
+Type=Application
+Terminal=false
+MimeType=x-scheme-handler/spice;x-scheme-handler/spice+unix;x-scheme-handler/spice+tls;application/x-virt-viewer;
+StartupNotify=true
+Categories=GNOME;GTK;Network;RemoteAccess;
+Icon=virt-viewer
