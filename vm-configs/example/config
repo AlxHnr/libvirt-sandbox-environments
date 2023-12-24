@@ -1,0 +1,7 @@
+color=bbbbbb
+cores=ALL
+memory=4096
+disksize=16
+sound+microphone
+internet
+root_tty2

@@ -1,0 +1,4 @@
+color=000000
+cores=2
+memory=invalid string
+disksize=8

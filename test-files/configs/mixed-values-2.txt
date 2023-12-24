@@ -1,0 +1,7 @@
+color=000000
+cores=2
+memory=256
+disksize=9
+sound+microphone
+expose_homedir
+internet

@@ -1,0 +1,7 @@
+color=abcdef
+cores=4
+memory=768
+disksize=2
+clipboard
+sound+microphone
+internet

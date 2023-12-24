@@ -1,0 +1,4 @@
+color=000000
+memory=512
+cores=32
+disksize=invalid string

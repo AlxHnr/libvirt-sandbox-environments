@@ -1,0 +1,6 @@
+color=000000
+cores=4
+memory=768
+disksize=8
+sound
+internet

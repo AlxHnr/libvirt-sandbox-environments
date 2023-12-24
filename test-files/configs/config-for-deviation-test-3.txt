@@ -1,0 +1,7 @@
+color=000000
+cores=3
+memory=256
+disksize=8
+clipboard
+internet
+gpu

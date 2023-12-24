@@ -1,0 +1,16 @@
+export PS1='\W $ '
+export DISPLAY=':0'
+export XAUTHORITY="$HOME/.Xauthority"
+export XDG_RUNTIME_DIR="/tmp/$UID"
+export FLATPAK_USER_DIR='/var/lib/user/flatpak'
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/dbus-socket"
+test ! -e "$HOME/.local/bin" || export PATH="$PATH:$HOME/.local/bin"
+test ! -e /var/lib/user/pip3-target ||
+  export PATH="$PATH:/var/lib/user/pip3-target/bin" PYTHONPATH='/var/lib/user/pip3-target'
+
+if mkdir -m 700 "$XDG_RUNTIME_DIR"; then
+  dbus-daemon --address "$DBUS_SESSION_BUS_ADDRESS" --session --fork
+fi
+
+test "$(tty)" != '/dev/tty1' || exec startx -- "$DISPLAY"
+test "$(tty)" != '/dev/ttyS0' || HISTFILE='/dev/null'

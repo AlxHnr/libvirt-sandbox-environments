@@ -1,0 +1,7 @@
+::sysinit:/sbin/openrc sysinit
+::sysinit:/sbin/openrc boot
+::wait:/sbin/openrc default
+::shutdown:/sbin/openrc shutdown
+::once:/sbin/openrc afterlogin
+tty1::respawn:/bin/login -f user
+ttyS0::respawn:/bin/login -f user

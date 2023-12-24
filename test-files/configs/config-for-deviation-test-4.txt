@@ -1,0 +1,9 @@
+color=cccccc
+cores=3
+memory=768
+disksize=8
+clipboard
+sound+microphone
+expose_homedir
+root_tty2
+autostart

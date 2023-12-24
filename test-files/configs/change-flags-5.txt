@@ -1,0 +1,7 @@
+color=000000
+cores=8
+memory=1024
+disksize=8
+sound+microphone
+gpu
+expose_homedir

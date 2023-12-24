@@ -1,0 +1,5 @@
+color=000000
+cores=4
+memory=512
+disksize=12
+usb=android,printer

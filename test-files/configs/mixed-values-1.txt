@@ -1,0 +1,8 @@
+color=000000
+cores=2
+memory=256
+disksize=7
+gpu
+clipboard
+sound
+root_tty2

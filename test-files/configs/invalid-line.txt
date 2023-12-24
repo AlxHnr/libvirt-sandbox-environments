@@ -1,0 +1,5 @@
+color=000000
+cores=2
+invalid line
+memory=512
+disksize=8

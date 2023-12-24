@@ -1,0 +1,9 @@
+color=abcdef
+cores=3
+memory=768
+disksize=8
+clipboard
+sound+microphone
+internet
+gpu
+usb=printer

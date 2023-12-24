@@ -1,0 +1,8 @@
+color=000000
+cores=4
+memory=512
+disksize=27
+sound
+kiosk
+autostart
+printer
