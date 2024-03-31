@@ -62,7 +62,7 @@ root_tty2
 **Static** means the flag will only be applied during VM creation and will not be updated by
 subsequent runs of `./setup-vms.sh`.
 
-The `usb=...` flag accepts `android`, `printer` and `webcam`. E.g. `usb=webcam` or
+The `usb=...` flag accepts `android`, `printer`, `HID` and `webcam`. E.g. `usb=webcam` or
 `usb=printer,webcam`.
 
 ### Install packages during VM creation
