@@ -477,7 +477,7 @@ makeVirtInstallCommand()
 
 setupPrinter()
 (
-  sendCommand 'apk add cups cups-filters hplip system-config-printer'
+  sendCommand 'apk add cups cups-filters system-config-printer'
   sendCommand 'rc-update add cupsd afterlogin'
   sendCommand 'adduser user lpadmin'
 )
