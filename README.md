@@ -122,15 +122,13 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 * `./run-in-vm.sh` only communicates with the VM in one direction (host to VM) for security reasons.
   It does not know when a VM has fully started and uses [guesstimates](./run-in-vm.sh#L47). In the
-  rare case that a flatpak app starts before pulseaudio, the app may not see the microphone and
-  should be restarted
-* Virt-viewer sometimes intercepts the F10 key and does not forward it to the VM. To fix this, click
-  into the VMs window or use the scroll wheel while the cursor is inside the VM window
+  rare case that a flatpak app starts before pulseaudio, the app may have no sound and should be
+  restarted
 * On systems which remap capslock (e.g. to escape), it will cause the key to be [pressed
   twice](https://gitlab.freedesktop.org/spice/spice-gtk/-/issues/143). A workaround can be found
   here: <https://gitlab.freedesktop.org/spice/spice/-/issues/66>
-* When resizing virt-viewer windows on high-resolution displays, it may cause the VMs desktop to
-  freeze for ~10 seconds on rare occasions
+* Virt-viewer does not forward the F10 key to the VM when the mouse is outside the VM window, even
+  if the window is focused
 
 # FAQ
 
