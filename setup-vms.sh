@@ -477,7 +477,7 @@ makeVirtInstallCommand()
 
 setupPrinter()
 (
-  sendCommand 'apk add cups cups-filters system-config-printer'
+  sendCommand 'apk add cups cups-filters hplip system-config-printer'
   sendCommand 'rc-update add cupsd afterlogin'
   sendCommand 'adduser user lpadmin'
 )
@@ -559,7 +559,7 @@ setupVM()
     printf 'poweroff\n'
     waitFor '^Script done'
   } | runInPTY "$(makeVirtInstallCommand "$vm_name" "$vm_image" "$cfg_disksize") \
-    --location '$alpine_iso' --extra-args 'console=tty0 console=ttyS0,115200'"
+    --cdrom '$alpine_iso'"
   virt-xml "$vm_name" --remove-device --disk device=cdrom
 
   {
@@ -581,7 +581,7 @@ setupVM()
     sendCommand 'echo "rc_parallel=\"YES\"" >> /etc/rc.conf'
     sendCommand 'sed -ri "s,^overwrite=.*$,overwrite=0," /etc/update-extlinux.conf'
     sendCommand 'sed -ri "s,^TIMEOUT .*$,TIMEOUT 1," /boot/extlinux.conf'
-    sendCommand 'sed -ri "s,^(user:.*)/ash,\1/bash," /etc/passwd'
+    sendCommand 'sed -ri "s,^(user:.*)/a?sh,\1/bash," /etc/passwd'
     sendCommand 'passwd -l root'
     writeFile /etc/doas.d/doas.conf < ./files/doas.conf
     {
@@ -627,7 +627,7 @@ test -z "$SETUP_VMS_SH_DONT_RUN" || return 0
 
 cd "$(dirname "$0")"
 
-alpine_version="3.19.1"
+alpine_version="3.20.0"
 vm_data_mountpoint="/vm-data"
 alpine_iso="$vm_data_mountpoint/alpine-standard-$alpine_version-x86_64.iso"
 export LIBVIRT_DEFAULT_URI='qemu:///system'

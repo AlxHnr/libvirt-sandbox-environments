@@ -17,6 +17,7 @@ spice-vdagent
 tint2
 wmctrl
 xdg-utils
+xinit
 xrandr
 xsel
 xsetroot
