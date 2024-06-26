@@ -16,11 +16,6 @@ assertIsValidVM()
   test -e "$1" || die "unknown vm: '$vm_name'"
 )
 
-sanitizeFind0Output()
-(
-  tr -d '\n' | tr '\0' '\n' | ansifilter
-)
-
 dumpFile()
 (
   filepath="$1"
@@ -38,10 +33,7 @@ case "$cmd" in
   listRunnableCommands)
     assertIsValidVM "$vm_name"
     dumpFile "$vm_name/packages"
-    if test -e "$vm_data_mountpoint/$vm_name/home/.local/bin"; then
-      find "$vm_data_mountpoint/$vm_name/home/.local/bin" -type f -print0 |
-        sanitizeFind0Output | grep -oE '[^/]+$' || true
-    fi
+    dumpFile "$vm_name/custom-commands"
     # List default apps
     printf '%s\n' xterm
     ;;
