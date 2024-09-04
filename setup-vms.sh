@@ -126,7 +126,7 @@ getUsbClassCodes()
   case "$device_type" in
     android) printf '0x06\n0xFF\n';; # Devices don't work yet.
     printer) printf '0x07\n0xFF\n';;
-    webcam) printf '0x0E\n0x01\n';; # Most webcams are coupled to a microphone.
+    webcam) printf '0x0E\n0x01\n';; # Most webcams contain a mandatory microphone.
     HID) printf '0x03\n';; # Human interface devices e.g. drawing tablets.
     *) die "unknown usb device in config: \"$device_type\"";;
   esac
