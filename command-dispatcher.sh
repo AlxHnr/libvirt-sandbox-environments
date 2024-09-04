@@ -109,6 +109,15 @@ client()
   escaped_command=$(/usr/bin/printf '%q ' "$@")
   printf '%s >/dev/null 2>&1 &\n' "$escaped_command" |
     nc -NU "$state_dir/$vm_name/socket" >/dev/null
+
+  # Check is done after command to improve latency.
+  virsh list --name | grep -qxF "$vm_name" || {
+    printf 'error: vm "%s" not reachable, cleaning up server state...\n' "$vm_name"
+    xargs -n 1 pidwait -s < "$state_dir/$vm_name/pid" &
+    xargs kill < "$state_dir/$vm_name/pid"
+    wait
+    exit 1
+  } >&2
 )
 
 export LIBVIRT_DEFAULT_URI='qemu:///system'
