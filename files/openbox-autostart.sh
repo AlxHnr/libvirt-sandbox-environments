@@ -10,3 +10,10 @@ tint2 &
 udevadm monitor -u -s drm |
 stdbuf -o 0 grep -o change |
 xargs -n 1 -I {} xrandr --output Virtual-1 --auto &
+
+(
+  sleep 5
+  for device in Master PCM Capture; do
+    amixer sset "$device" 100% unmute
+  done
+) &
