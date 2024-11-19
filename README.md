@@ -120,6 +120,8 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 # Known Bugs
 
+* Fractional scaling (e.g. on GNOME) breaks VM window resizing. To set scaling manually, see
+  `./files/Xresources` -> `Xft.dpi`
 * `./run-in-vm.sh` only communicates with the VM in one direction (host to VM) for security reasons.
   It does not know when a VM has fully started and uses [guesstimates](./run-in-vm.sh#L47). In the
   rare case that a flatpak app starts before pulseaudio, the app may have no sound and should be
