@@ -562,6 +562,17 @@ setupVM()
     --cdrom '$alpine_iso'"
   virt-xml "$vm_name" --remove-device --disk device=cdrom
 
+  # Use USB 2.0 controllers to prevent webcam flickering.
+  usb_address_flags='address.type=pci,address.bus=0x00,address.slot=0x1d'
+  virt-xml "$vm_name" --edit type=usb --controller \
+    "clearxml=yes,type=usb,model=ich9-ehci1,$usb_address_flags,address.function=0x7"
+  virt-xml "$vm_name" --add-device --controller \
+    "type=usb,model=ich9-uhci1,master.startport=0,$usb_address_flags,address.function=0x0"
+  virt-xml "$vm_name" --add-device --controller \
+    "type=usb,model=ich9-uhci2,master.startport=2,$usb_address_flags,address.function=0x1"
+  virt-xml "$vm_name" --add-device --controller \
+    "type=usb,model=ich9-uhci3,master.startport=4,$usb_address_flags,address.function=0x2"
+
   {
     waitAndLogin
 

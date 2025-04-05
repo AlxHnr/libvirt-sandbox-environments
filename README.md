@@ -158,3 +158,12 @@ See `Xft.dpi` in `./files/Xresources`.
 ## How to use a different keyboard layout?
 
 See `./files/setup-alpine.cfg` and `./files/openbox-autostart.sh`.
+
+## How to run multiple webcams at once?
+
+Find the PCI host devices to which your webcams are attached via `lsusb.py -ciu`. Add those PCI
+devices to your VM.
+
+### Why not just use a USB 3.0 controller?
+
+They cause webcam glitches due to some bug in qemu/kvm.
