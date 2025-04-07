@@ -578,6 +578,7 @@ setupVM()
 
     sendCommand 'setup-xorg-base && echo'
     sendCommand 'echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories'
+    sendCommand 'echo "@edge-community https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories'
     sendCommand "apk add --no-progress $(escapeAndJoin < ./files/packages)"
     test ! -e "$vm_config_dir/packages" ||
       sendCommand "apk add --no-progress $(escapeAndJoin < "$vm_config_dir/packages")"
