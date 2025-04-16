@@ -14,10 +14,10 @@
 module qemu-pipewire-pulse 1.0;
 
 require {
-	type unconfined_t;
 	type svirt_t;
-	class unix_stream_socket connectto;
+	type user_tmp_t;
+	class sock_file write;
 }
 
 #============= svirt_t ==============
-allow svirt_t unconfined_t:unix_stream_socket connectto;
+allow svirt_t user_tmp_t:sock_file write;

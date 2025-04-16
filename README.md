@@ -14,10 +14,11 @@ The scripts in this directory expect the current user to be part of the `libvrit
 permissions to access `/vm-data/`:
 
 ```sh
-sudo dnf install ansifilter bc tar virt-install virt-manager virt-viewer
+sudo dnf install ansifilter bc libvirt netcat pipewire-pulseaudio qemu tar util-linux-script \
+  virt-install virt-viewer
 sudo gpasswd -a "$USER" libvirt
 sudo mkdir -p /vm-data/
-sudo chown "$USER:qemu" /vm/data/
+sudo chown "$USER:qemu" /vm-data/
 sudo chmod 770 /vm-data/
 ```
 
