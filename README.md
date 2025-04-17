@@ -168,3 +168,21 @@ devices to your VM.
 ### Why not just use a USB 3.0 controller?
 
 They cause webcam glitches due to some bug in qemu/kvm.
+
+## Rootless podman does not work when `expose_homedir` is set
+
+Storing container images in your mounted home directory leads to the following error:
+
+```
+Error: copying system image from manifest list: writing blob: adding layer with blob"sha256:..."/""/"sha256:...": unpacking failed (error: exit status 1; output: setting up pivot dir:mkdir ./.pivot_root...: permission denied)
+```
+
+Run `podman system reset` and create the file `~/.config/containers/storage.conf`:
+
+```conf
+[storage]
+driver = "overlay"
+graphroot = "/var/lib/user/containers/storage"
+```
+
+Ensure that the VMs configured disksize is large enough to store your images.
