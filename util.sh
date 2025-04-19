@@ -32,7 +32,7 @@ case "$cmd" in
   listConfiguredVMs) printf '%s\n' *;;
   listRunnableCommands)
     assertIsValidVM "$vm_name"
-    dumpFile "$vm_name/packages"
+    dumpFile "$vm_name/packages" | sed -r 's/@[^ \t\r\n\v\f]+$//'
     dumpFile "$vm_name/custom-commands"
     # List default apps
     printf '%s\n' xterm
