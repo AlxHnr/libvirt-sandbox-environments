@@ -185,4 +185,5 @@ driver = "overlay"
 graphroot = "/var/lib/user/containers/storage"
 ```
 
-Ensure that the VMs configured disksize is large enough to store your images.
+Note that this requires the `fuse-overlayfs` package to be installed inside the VM. Also make sure
+that the VMs configured disksize is large enough to store your images.
