@@ -256,7 +256,7 @@ populateVMVariables()
       vm_gpu='true' || vm_gpu='false'
     printf '%s\n' "$xml" | grep -qE '<interface\>' &&
       vm_internet='true' || vm_internet='false'
-    virsh list --all --autostart --name | grep -qxF "$1" &&
+    printf '%s\n' "$xml" | grep -qE '<description>CUSTOM_AUTOSTART=true</description>' &&
       vm_autostart='true' || vm_autostart='false'
 
     usb_classes=$(printf '%s\n' "$xml" | grep -E '<usbdev\>.*\<allow=.\<yes\>' |
@@ -352,9 +352,9 @@ reapplyConfigFlags()
         ;;
       autostart)
         if test "$cfg_autostart" = 'true'; then
-          virsh autostart "$vm_name"
+          virt-xml "$vm_name" --edit --metadata description="CUSTOM_AUTOSTART=true"
         else
-          virsh autostart --disable "$vm_name"
+          virt-xml "$vm_name" --edit --metadata description="CUSTOM_AUTOSTART=false"
         fi
         ;;
       usb)
@@ -622,7 +622,7 @@ setupVM()
     waitFor '^Script done'
   } | runInPTY "virsh start --console '$vm_name'"
   virt-xml "$vm_name" --remove-device --network all
-  virt-xml "$vm_name" --edit --metadata description="SETUP_SUCCEEDED=TRUE"
+  virt-xml "$vm_name" --edit --metadata description="CUSTOM_AUTOSTART=false"
 
   test "$cfg_expose_homedir" = 'true' || return 0
   printf 'Attaching "%s/home/" to %s\n' "$vm_dir" "$vm_name"

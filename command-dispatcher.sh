@@ -37,7 +37,7 @@ vmConnection()
   state_dir="$2"
 
   virsh dumpxml --inactive "$vm_name" |
-    grep -qF '<description>SETUP_SUCCEEDED=TRUE</description>' || return 0
+    grep -qF '<description>CUSTOM_AUTOSTART=' || return 0
 
   mkdir "$state_dir/$vm_name" || die "vm connection already exists: $vm_name"
   trap 'cleanupVmConnection "$vm_name" "$state_dir"' EXIT

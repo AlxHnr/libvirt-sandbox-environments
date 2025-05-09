@@ -42,7 +42,7 @@ while true; do
       grep -qxF 'internet' "./vm-configs/$vm_name/config" || continue
       test ! -e "$state_dir/$vm_name" || continue
       virsh dumpxml --inactive "$vm_name" |
-        grep -qF '<description>SETUP_SUCCEEDED=TRUE</description>' || continue
+        grep -qF '<description>CUSTOM_AUTOSTART=' || continue
 
       printf 'Sending update command to vm %s\n' "$vm_name"
       # The following command may get ignored if the target vm is still booting or shutting down.

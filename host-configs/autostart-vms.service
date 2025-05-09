@@ -1,0 +1,14 @@
+# The service can be installed with the following commands:
+#   mkdir -p ~/.config/systemd/user/
+#   cp ./autostart-vms.service ~/.config/systemd/user/
+#   systemctl --user enable autostart-vms
+[Unit]
+Description=Autostart VMs
+
+[Service]
+Type=oneshot
+Environment=LIBVIRT_DEFAULT_URI="qemu:///system"
+ExecStart=/bin/sh -c "virsh list --state-shutoff --name | xargs -I {} sh -c \"virsh dumpxml '{}' | grep -qzvF '<description>CUSTOM_AUTOSTART=true' || virsh start '{}'\""
+
+[Install]
+WantedBy=default.target
