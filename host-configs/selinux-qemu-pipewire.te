@@ -1,0 +1,22 @@
+# This file contains an SELinux policy. It allows libvirt's qemu process to access the users
+# pipewire session trough /tmp/pipewire-0. See `qemu-socket.conf` for more informations.
+#
+# These commands will build and install the policy:
+#   checkmodule -m -M ./selinux-qemu-pipewire.te -o ./qemu-pipewire.mod
+#   semodule_package -m ./qemu-pipewire.mod -o ./qemu-pipewire.pp
+#   sudo semodule -i ./qemu-pipewire.pp
+#   rm ./*.mod ./*.pp
+#
+# Uninstall the policy package when no longer needed:
+#   sudo semodule -r qemu-pipewire
+
+module qemu-pipewire 1.0;
+
+require {
+	type svirt_t;
+	type user_tmp_t;
+	class sock_file write;
+}
+
+#============= svirt_t ==============
+allow svirt_t user_tmp_t:sock_file write;

@@ -1,9 +1,13 @@
+# This service is is used instead of libvirt's builtin autostart mechanism, because these VMs
+# require the users pipewire session.
+#
 # The service can be installed with the following commands:
 #   mkdir -p ~/.config/systemd/user/
 #   cp ./autostart-vms.service ~/.config/systemd/user/
 #   systemctl --user enable autostart-vms
 [Unit]
 Description=Autostart VMs
+Requires=pipewire.service
 
 [Service]
 Type=oneshot

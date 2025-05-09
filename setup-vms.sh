@@ -316,20 +316,23 @@ reapplyConfigFlags()
       sound)
         if test "$cfg_sound" = 'true'; then
           virt-xml "$vm_name" --add-device --sound 'model=ich9,codec.type=output'
+          virt-xml "$vm_name" --edit --audio \
+            "clearxml=yes,id=1,type=pipewire,xpath1.set=./@runtimeDir=/tmp,xpath2.set=./output/@streamName='$vm_name'"
         else
           virt-xml "$vm_name" --remove-device --sound all
+          virt-xml "$vm_name" --remove-device --audio all
         fi
         ;;
       microphone)
-        if test "$cfg_microphone" = 'true'; then
-          codec='duplex'
-          backend='type=pulseaudio,xpath.set=./@serverName=unix:/tmp/qemu-pulse-native'
-        else
-          codec='output'
-          backend='type=spice'
+        if test "$cfg_sound" = 'true'; then
+          if test "$cfg_microphone" = 'true'; then
+            virt-xml "$vm_name" --edit --sound 'codec.type=duplex'
+            virt-xml "$vm_name" --edit --audio "xpath.set=./input/@streamName='$vm_name'"
+          else
+            virt-xml "$vm_name" --edit --sound 'codec.type=output'
+            virt-xml "$vm_name" --edit --audio 'xpath.delete=./input'
+          fi
         fi
-        test "$cfg_sound" != 'true' || virt-xml "$vm_name" --edit --sound "codec.type=$codec"
-        virt-xml "$vm_name" --edit --audio "clearxml=yes,id=1,$backend"
         ;;
       gpu)
         if test "$cfg_gpu" = 'true'; then
@@ -648,8 +651,8 @@ test "$(stat -c %U:%G "$vm_data_mountpoint")" = 'user:qemu' ||
   die "invalid directory owners, expected user:qemu: \"$vm_data_mountpoint\""
 test "$(stat -c %a "$vm_data_mountpoint")" = '770' ||
   die "invalid directory permissions, expected 770: \"$vm_data_mountpoint\""
-test -e /tmp/qemu-pulse-native ||
-  die 'socket does not exist: "/tmp/qemu-pulse-native", see ./host-configs/ for more informations'
+test -e /tmp/pipewire-0 ||
+  die 'socket does not exist: "/tmp/pipewire-0", see ./host-configs/ for more informations'
 
 (cd ./vm-configs/ && printf '%s\n' *) |
 while read -r vm_name; do

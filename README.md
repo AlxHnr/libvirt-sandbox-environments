@@ -14,8 +14,7 @@ The scripts in this directory expect the current user to be part of the `libvrit
 permissions to access `/vm-data/`:
 
 ```sh
-sudo dnf install ansifilter bc libvirt netcat pipewire-pulseaudio qemu tar util-linux-script \
-  virt-install virt-viewer
+sudo dnf install ansifilter bc libvirt netcat qemu tar util-linux-script virt-install virt-viewer
 sudo gpasswd -a "$USER" libvirt
 sudo mkdir -p /vm-data/
 sudo chown "$USER:qemu" /vm-data/
@@ -135,9 +134,6 @@ This script will send update commands to running VMs and keeps waiting for futur
 * Virt-viewer sometimes auto-attaches your external dock's audio device to VMs with webcam
   permissions. That can mess up your configured audio setup. Detach the device from the VM via the
   menu on the top left corner of the virt-viewer window
-* Certain heavier workloads can increase audio latency for affected VMs. This can be mitigated by
-  replacing SPICE with pulseaudio. The easiest way to do so is by adding `sound+microphone` to the
-  VMs config and rerunning `setup-vms.sh`
 
 # FAQ
 
