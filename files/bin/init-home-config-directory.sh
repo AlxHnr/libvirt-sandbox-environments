@@ -19,6 +19,7 @@ EOF
 )
 
 kwriteconfig6 --file kxkbrc --group Layout --key LayoutList us
+kwriteconfig6 --file kwinrc --group Plugins --key screenedgeEnabled false
 kwriteconfig6 --file kdeglobals --group WM --key activeForeground 255,255,255
 kwriteconfig6 --file kdeglobals --group WM --key activeBackground COLOR_PLACEHOLDER_DEC
 #KIOSK: setupKioskMode
