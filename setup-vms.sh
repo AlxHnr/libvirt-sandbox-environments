@@ -452,56 +452,6 @@ ensureIsoExists()
   gpg --homedir ./gnupg/ --no-permission-warning --verify "$path_to_iso_signature" "$path_to_iso"
 )
 
-setupUserHomedir()
-(
-  path_to_homedir="$1"
-  config_color="$2"
-  config_kiosk="$3"
-
-  sendCommand "mkdir -p '$path_to_homedir/.config/openbox/'"
-  {
-    cat ./files/openbox-autostart.sh
-    printf '\n'
-    printf 'xsetroot -solid "#%s"\n' "$config_color"
-  } | writeFile "$path_to_homedir/.config/openbox/autostart.sh"
-  sendCommand "chmod +x '$path_to_homedir/.config/openbox/autostart.sh'"
-  writeFile "$path_to_homedir/.config/openbox/environment" < ./files/openbox-environment.sh
-  writeFile "$path_to_homedir/.Xresources" < ./files/Xresources
-
-  {
-    cat ./files/openbox-rc.xml
-
-    test "$config_kiosk" != true || cat <<'EOF'
-
-  <application type="normal">
-    <decor>no</decor>
-    <maximized>true</maximized>
-  </application>
-EOF
-
-    cat <<'EOF'
-
-</applications>
-</openbox_config>
-EOF
-  } | writeFile "$path_to_homedir/.config/openbox/rc.xml"
-
-  sendCommand "mkdir -p '$path_to_homedir/.config/tint2/'"
-  writeFile "$path_to_homedir/.config/tint2/tint2rc" < ./files/tint2rc
-)
-
-setupExposedUserHomedir()
-(
-  homedir="$1"
-  config_color="$2"
-  config_kiosk="$3"
-
-  {
-    printf 'export HISTFILE=/dev/null PS1="localhost:~$ "\n'
-    setupUserHomedir "$homedir" "$config_color" "$config_kiosk"
-  } | runInPTYRaw 'sh'
-)
-
 makeVirtInstallCommand()
 (
   vm_name="$1"
@@ -626,7 +576,7 @@ setupVM()
   {
     waitAndLogin
 
-    sendCommand 'setup-xorg-base && echo'
+    sendCommand 'setup-wayland-base && echo'
     sendCommand 'echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories'
     sendCommand 'echo "@edge-community https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories'
     sendCommand "apk add --no-progress $(escapeAndJoin < ./files/packages)"
@@ -656,9 +606,14 @@ setupVM()
       test "$cfg_root_tty2" != 'true' || printf 'tty2::respawn:/bin/login -f root\n'
     } | writeFile /etc/inittab
 
+    sendCommand 'mkdir /usr/share/wayland-sessions'
+    writeFile /usr/share/wayland-sessions/kwin.desktop < ./files/kwin.desktop
+    for path in ./files/bin/*; do
+      script_name=$(basename "$path")
+      writeFile "/usr/local/bin/$script_name" < "$path"
+      sendCommand "chmod +x '/usr/local/bin/$script_name'"
+    done
     writeFile /etc/bash/custom-aliases.sh < ./files/custom-aliases.sh
-    writeFile /usr/local/bin/update-system.sh < ./files/update-system.sh
-    sendCommand 'chmod +x /usr/local/bin/update-system.sh'
 
     test "$cfg_printer" != 'true' || setupPrinter
 
@@ -667,12 +622,8 @@ setupVM()
     test ! -e "$vm_config_dir/flatpaks" || setupFlatpak "$vm_config_dir/flatpaks"
     test ! -e "$vm_config_dir/pip" || setupPip "$vm_config_dir/pip"
 
-    if test "$cfg_expose_homedir" = 'true'; then
+    test "$cfg_expose_homedir" != 'true' ||
       sendCommand 'echo "homedir_mount_tag /home/user virtiofs rw,relatime 0 0" >> /etc/fstab'
-    else
-      setupUserHomedir '/home/user' "$cfg_color" "$cfg_kiosk"
-      sendCommand 'chown -R user:user /home/user'
-    fi
     printf 'rm /root/.ash_history && poweroff\n'
     waitFor '^Script done'
   } | runInPTY "virsh start --console '$vm_name'"
@@ -684,10 +635,7 @@ setupVM()
   virt-xml "$vm_name" --edit --memorybacking 'clearxml=yes,access.mode=shared,source.type=memfd'
   virt-xml "$vm_name" --add-device --filesystem \
     "type=mount,source.dir=$vm_dir/home,target.dir=homedir_mount_tag,driver.type=virtiofs"
-
-  printf 'Initializing "%s/home/"...\n' "$vm_dir"
   mkdir -p "$vm_dir/home"
-  setupExposedUserHomedir "$vm_dir/home" "$cfg_color" "$cfg_kiosk"
 )
 
 test -z "$SETUP_VMS_SH_DONT_RUN" || return 0
@@ -710,12 +658,4 @@ test -e /tmp/pipewire-0 ||
 while read -r vm_name; do
   vmExists "$vm_name" || setupVM "$vm_name" "$alpine_version" "$alpine_iso" "$vm_data_mountpoint"
   reapplyConfigFlags "$vm_name" "vm-configs/$vm_name/config"
-
-  test "$1" != 'regenerate-exposed-homedirs' || (
-    homedir="$vm_data_mountpoint/$vm_name/home"
-    if test -e "$homedir"; then
-      populateVMVariables "$vm_name" "vm-configs/$vm_name/config"
-      setupExposedUserHomedir "$homedir" "$cfg_color" "$cfg_kiosk"
-    fi
-  )
 done
