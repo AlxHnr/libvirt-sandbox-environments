@@ -13,4 +13,3 @@ if mkdir -m 700 "$XDG_RUNTIME_DIR"; then
 fi
 
 test "$(tty)" != '/dev/tty1' || exec startx -- "$DISPLAY"
-test "$(tty)" != '/dev/ttyS0' || HISTFILE='/dev/null'

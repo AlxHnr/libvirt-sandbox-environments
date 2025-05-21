@@ -106,8 +106,7 @@ client()
   test -n "$*" || die 'no command specified'
   test -e "$state_dir/$vm_name/socket" || die "dispatcher is not connected to vm $vm_name"
 
-  escaped_command=$(/usr/bin/printf '%q ' "$@")
-  printf '%s >/dev/null 2>&1 &\n' "$escaped_command" |
+  { /usr/bin/printf '%q ' "$@"; printf '\n'; } |
     nc -NU "$state_dir/$vm_name/socket" >/dev/null
 
   # Check is done after command to improve latency.

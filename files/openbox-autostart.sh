@@ -17,3 +17,5 @@ xargs -n 1 -I {} xrandr --output Virtual-1 --auto &
     amixer sset "$device" 100% unmute
   done
 ) &
+
+xargs -I {} < /tmp/host-serial-output sh -c 'exec {} >/dev/null 2>&1 &' &

@@ -4,4 +4,4 @@
 ::shutdown:/sbin/openrc shutdown
 ::once:/sbin/openrc afterlogin
 tty1::respawn:/bin/login -f user
-ttyS0::respawn:/bin/login -f user
+ttyS0::once:sh -c 'F=/tmp/host-serial-output; mkfifo -m 400 $F; chown user:user $F; exec cat > $F'
