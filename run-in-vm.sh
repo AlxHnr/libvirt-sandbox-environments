@@ -44,7 +44,7 @@ fi
 if ! virsh domstate "$vm_name" | grep -qxF 'running'; then
   printf 'starting vm %s..\n' "$vm_name"
   virsh start "$vm_name"
-  sleep 8
+  sleep 4
 fi
 
 ./command-dispatcher.sh run "$vm_name" "$@"

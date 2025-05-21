@@ -491,7 +491,7 @@ setupFlatpak()
 
   # This symlink is needed to workaround apps which hard-code /var/lib/flatpak.
   sendCommand 'ln -s /var/lib/user/flatpak /var/lib/flatpak'
-  sendCommand 'apk add --no-progress flatpak pulseaudio'
+  sendCommand 'apk add --no-progress flatpak pipewire pipewire-pulse wireplumber'
 
   {
     cat <<'EOF'

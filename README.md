@@ -122,10 +122,6 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 * Fractional scaling (e.g. on GNOME) breaks VM window resizing. Set it to 100% (or a multiple it)
   and configure this file instead: `./files/Xresources` -> `Xft.dpi`
-* `./run-in-vm.sh` only communicates with the VM in one direction (host to VM) for security reasons.
-  It does not know when a VM has fully started and uses [guesstimates](./run-in-vm.sh#L47). In the
-  rare case that a flatpak app starts before pulseaudio, the app may have no sound and should be
-  restarted
 * On systems which remap capslock (e.g. to escape), it will cause the key to be [pressed
   twice](https://gitlab.freedesktop.org/spice/spice-gtk/-/issues/143). A workaround can be found
   here: <https://gitlab.freedesktop.org/spice/spice/-/issues/66>
