@@ -1,5 +1,18 @@
-This repository contains scripts for bootstrapping and maintaining Alpine Linux environments for
-sandboxing.
+# Wayland Branch - Changes
+
+* Replaced openbox with KWin (standalone without KDE). The reasons for choosing KWin are explained
+  in commit fe3a3f0
+* Tray got removed
+* Screen sharing does not work, xdg-desktop-portal implementations don't support standalone KWin
+
+Migrating away from KWin could solve the portal issue, but the alternatives are currently blocked
+by:
+
+* https://gitlab.com/qemu-project/qemu/-/issues/2315
+* https://gitlab.freedesktop.org/wayland/weston/-/issues/339
+* https://gitlab.freedesktop.org/wayland/weston/-/issues/341
+
+Portals do work when running a full-blown KDE Plasma desktop.
 
 # Why?
 
@@ -106,8 +119,7 @@ Example for launching an app in a virt-viewer window:
 ```
 
 If the VM is not running, it will be started by the script. Closing the virt-viewer window will
-gracefully close all windows currently open inside the VM. All VMs are running an openbox desktop
-with an application tray hiding in the bottom left corner of the desktop.
+gracefully close all windows currently open inside the VM.
 
 **Note**: The console output of commands running in VMs will not be forwarded to the host due to
 security reasons.
