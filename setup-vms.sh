@@ -594,7 +594,8 @@ setupVM()
     sendCommand 'rc-update add networking afterlogin'
     sendCommand 'rc-update add spice-vdagentd afterlogin'
     sendCommand 'echo "rc_parallel=\"YES\"" >> /etc/rc.conf'
-    sendCommand 'sed -ri "s,^overwrite=.*$,overwrite=0," /etc/update-extlinux.conf'
+
+    printf 'overwrite=0\n' | writeFile /etc/update-extlinux.d/disable-overwrite.conf
     sendCommand 'sed -ri "s,^TIMEOUT .*$,TIMEOUT 1," /boot/extlinux.conf'
     sendCommand 'sed -ri "s,^(user:.*)/a?sh,\1/bash," /etc/passwd'
     sendCommand 'passwd -l root'
