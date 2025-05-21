@@ -145,6 +145,14 @@ getUsbDeviceType()
   esac
 )
 
+# Converts "552323" -> "85,35,35".
+unwrapHexColor()
+(
+  hex_color="$1"
+
+  printf '%s' "$hex_color" | sed -r 's,(..),0x\1\n,g' | xargs printf '%i\n' | paste -sd ,
+)
+
 # Parse the config file of the specified vm and populate variables in the callers environment.
 # Variables starting with `cfg_` reflect the state of the config file, while variables starting
 # with `vm_` represent the current vm state.
@@ -604,6 +612,11 @@ setupVM()
     test "$cfg_kiosk" != 'true' ||
       sendCommand 'sed -ri "s,^#KIOSK:,," /usr/local/bin/kwin-session.sh'
     writeFile /etc/bash/custom-aliases.sh < ./files/custom-aliases.sh
+    sendCommand 'mkdir -p /usr/local/share/wallpapers'
+    sed "s,COLOR_PLACEHOLDER,$cfg_color," < ./files/wallpaper-template.svg |
+      writeFile /usr/local/share/wallpapers/generated.svg
+    sendCommand "sed -ri 's/COLOR_PLACEHOLDER_DEC/$(unwrapHexColor "$cfg_color")/g'" \
+      /usr/local/bin/kwin-session.sh
 
 
     sendCommand 'mkdir -m 700 /var/lib/user/'
