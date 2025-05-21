@@ -613,6 +613,8 @@ setupVM()
       writeFile "/usr/local/bin/$script_name" < "$path"
       sendCommand "chmod +x '/usr/local/bin/$script_name'"
     done
+    test "$cfg_kiosk" != 'true' ||
+      sendCommand 'sed -ri "s,^#KIOSK:,," /usr/local/bin/kwin-session.sh'
     writeFile /etc/bash/custom-aliases.sh < ./files/custom-aliases.sh
 
     test "$cfg_printer" != 'true' || setupPrinter
