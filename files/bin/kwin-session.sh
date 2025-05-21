@@ -9,6 +9,7 @@ test ! -e "/var/lib/$USER/pip3-target" ||
 
 test -e "$HOME/.config" || {
   kwriteconfig6 --file kxkbrc --group Layout --key LayoutList us
+#KIOSK:  kwin-configure-kiosk-mode.sh
 }
 
 exec dbus-launch /usr/bin/kwin_wayland_wrapper \
