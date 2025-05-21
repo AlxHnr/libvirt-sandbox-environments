@@ -24,8 +24,7 @@ hotkeys="$hotkeys,usb-device-reset=,smartcard-insert=,smartcard-remove="
 virt_viewer_cmd=$(/usr/bin/printf 'virt-viewer --attach %q --wait -H %s\n' "$vm_name" "$hotkeys")
 test "$virt_viewer" = 'false' || pgrep -fx "$virt_viewer_cmd" >/dev/null || {
   $virt_viewer_cmd || true
-  ./command-dispatcher.sh run "$vm_name" \
-    sh -c 'wmctrl -l | grep -oE "^[[:alnum:]]+" | xargs -n 1 wmctrl -i -c'
+  ./command-dispatcher.sh run "$vm_name" kwin-close-all-windows.sh
 } >/dev/null 2>&1 &
 
 if ./command-dispatcher.sh run "$vm_name" "$@" >/dev/null 2>&1; then
