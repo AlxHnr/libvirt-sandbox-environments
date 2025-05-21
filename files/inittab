@@ -3,5 +3,5 @@
 ::wait:/sbin/openrc default
 ::shutdown:/sbin/openrc shutdown
 ::once:/sbin/openrc afterlogin
-tty1::respawn:/usr/bin/emptty -t 1 -u user -a Openbox
+tty1::respawn:/usr/bin/emptty -t 1 -u user -a Kwin
 ttyS0::once:sh -c 'F=/tmp/host-serial-output; mkfifo -m 400 $F; chown user:user $F; exec cat > $F'
