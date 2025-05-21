@@ -489,16 +489,13 @@ setupFlatpak()
 (
   flatpack_app_file="$1"
 
-  sendCommand 'apk add --no-progress flatpak pulseaudio'
-
-  # This workaround is needed because some apps have /var/lib/flatpak hard-coded in their code.
-  sendCommand 'rm -rf /var/lib/flatpak'
+  # This symlink is needed to workaround apps which hard-code /var/lib/flatpak.
   sendCommand 'ln -s /var/lib/user/flatpak /var/lib/flatpak'
+  sendCommand 'apk add --no-progress flatpak pulseaudio'
 
   {
     cat <<'EOF'
 export FLATPAK_USER_DIR=/var/lib/user/flatpak
-mkdir "$FLATPAK_USER_DIR"
 flatpak --user remote-add flathub https://flathub.org/repo/flathub.flatpakrepo
 EOF
     xargs -r < "$flatpack_app_file" -d '\n' -n 1 \
