@@ -1,0 +1,4 @@
+[Desktop Entry]
+Name=Kwin
+Type=Application
+Exec=/usr/local/bin/kwin-session.sh
