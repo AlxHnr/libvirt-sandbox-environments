@@ -121,7 +121,7 @@ client()
 )
 
 export LIBVIRT_DEFAULT_URI='qemu:///system'
-state_dir="/tmp/vm-command-dispatcher"
+state_dir="$XDG_RUNTIME_DIR/vm-command-dispatcher"
 
 case "$1" in
   server) server "$state_dir";;

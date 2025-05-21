@@ -26,7 +26,7 @@ canDownload()
 cd "$(dirname "$0")"
 export LIBVIRT_DEFAULT_URI='qemu:///system'
 
-state_dir="/tmp/vm-update-service"
+state_dir="$XDG_RUNTIME_DIR/vm-update-service"
 mkdir -m 700 "$state_dir" || die "already running"
 trap 'rm -rf "$state_dir"' EXIT
 
