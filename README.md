@@ -10,9 +10,6 @@ acceleration. I need something between these two worlds and libvirt VMs are fitt
 
 # Installation (Fedora)
 
-The scripts in this directory expect the current user to be part of the `libvrit` group and have the
-permissions to access `/vm-data/`:
-
 ```sh
 sudo dnf install ansifilter bc libvirt netcat qemu tar util-linux-script virt-install virt-viewer
 sudo gpasswd -a "$USER" libvirt
@@ -62,8 +59,7 @@ root_tty2
 **Static** means the flag will only be applied during VM creation and will not be updated by
 subsequent runs of `./setup-vms.sh`.
 
-The `usb=...` flag accepts `android`, `printer`, `HID` and `webcam`. E.g. `usb=webcam` or
-`usb=printer,webcam`.
+The `usb=...` flag accepts `android`, `printer`, `HID` and `webcam`. E.g. `usb=printer,webcam`.
 
 ### Install packages during VM creation
 
