@@ -610,13 +610,13 @@ setupVM()
       sendCommand "chmod +x '/usr/local/bin/$script_name'"
     done
     test "$cfg_kiosk" != 'true' ||
-      sendCommand 'sed -ri "s,^#KIOSK:,," /usr/local/bin/kwin-session.sh'
+      sendCommand 'sed -ri "s,^#KIOSK:,," /usr/local/bin/init-home-config-directory.sh'
     writeFile /etc/bash/custom-aliases.sh < ./files/custom-aliases.sh
     sendCommand 'mkdir -p /usr/local/share/wallpapers'
     sed "s,COLOR_PLACEHOLDER,$cfg_color," < ./files/wallpaper-template.svg |
       writeFile /usr/local/share/wallpapers/generated.svg
     sendCommand "sed -ri 's/COLOR_PLACEHOLDER_DEC/$(unwrapHexColor "$cfg_color")/g'" \
-      /usr/local/bin/kwin-session.sh
+      /usr/local/bin/init-home-config-directory.sh
 
 
     sendCommand 'mkdir -m 700 /var/lib/user/'
