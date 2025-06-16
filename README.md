@@ -96,7 +96,7 @@ Example for launching an app in a virt-viewer window:
 
 ```sh
 ./run-in-vm.sh YOUR_VM_NAME firefox
-./run-in-vm.sh YOUR_VM_NAME flatpak --user run com.discordapp.Discord
+./run-in-vm.sh YOUR_VM_NAME flatpak run com.discordapp.Discord
 ```
 
 If the VM is not running, it will be started by the script. Closing the virt-viewer window will

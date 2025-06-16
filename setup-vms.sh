@@ -489,8 +489,6 @@ setupFlatpak()
 (
   flatpack_app_file="$1"
 
-  # This symlink is needed to workaround apps which hard-code /var/lib/flatpak.
-  sendCommand 'ln -s /var/lib/user/flatpak /var/lib/flatpak'
   sendCommand 'apk add --no-progress flatpak pipewire pipewire-pulse wireplumber'
 
   {
@@ -499,7 +497,7 @@ export FLATPAK_USER_DIR=/var/lib/user/flatpak
 flatpak --user remote-add flathub https://flathub.org/repo/flathub.flatpakrepo
 EOF
     xargs -r < "$flatpack_app_file" -d '\n' -n 1 \
-      printf 'flatpak --user install -y --noninteractive %q\n'
+      printf 'flatpak install -y --noninteractive %q\n'
   } | writeFile /tmp/setup-flatpak.sh
 
   sendCommand 'runuser --login user -P -c "/bin/sh -e /tmp/setup-flatpak.sh"'
@@ -639,7 +637,7 @@ test -z "$SETUP_VMS_SH_DONT_RUN" || return 0
 
 cd "$(dirname "$0")"
 
-alpine_version="3.21.3"
+alpine_version="3.22.0"
 vm_data_mountpoint="/vm-data"
 alpine_iso="$vm_data_mountpoint/alpine-standard-$alpine_version-x86_64.iso"
 export LIBVIRT_DEFAULT_URI='qemu:///system'
