@@ -157,6 +157,15 @@ devices to your VM.
 
 They cause webcam glitches due to some bug in qemu/kvm.
 
+## How to do audio work if VMs have massively inconsistent audio latencies?
+
+Remove `sound` and `sound+microphone` from the VM configuration and rerun `./setup-vms.sh`. Use
+`lsusb.py -ciu` to find the PCI device to which your sound hardware is attached. Use virt-manager to
+manually assign this PCI device to your VM. When the VM starts, use alsamixer to adjust the volume.
+
+**Note**: You must assign whole PCI devices instead of just a single USB device to fix the latency,
+according to my own testing.
+
 ## Rootless podman does not work when `expose_homedir` is set
 
 Storing container images in your mounted home directory leads to the following error:
