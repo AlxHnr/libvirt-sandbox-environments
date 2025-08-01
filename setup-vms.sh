@@ -637,7 +637,7 @@ test -z "$SETUP_VMS_SH_DONT_RUN" || return 0
 
 cd "$(dirname "$0")"
 
-alpine_version="3.22.0"
+alpine_version="3.22.1"
 vm_data_mountpoint="/vm-data"
 alpine_iso="$vm_data_mountpoint/alpine-standard-$alpine_version-x86_64.iso"
 export LIBVIRT_DEFAULT_URI='qemu:///system'
