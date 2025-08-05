@@ -461,6 +461,7 @@ makeVirtInstallCommand()
     --name %q \
     --vcpus 4 \
     --memory 512 \
+    --boot uefi,loader_secure=no \
     --osinfo alpinelinux3.18 \
     --disk size=%s,path=%q,driver.discard=unmap \
     --xml ./devices/graphics/clipboard/@copypaste=no \
@@ -589,8 +590,8 @@ setupVM()
     sendCommand 'rc-update add networking afterlogin'
     sendCommand 'rc-update add spice-vdagentd afterlogin'
     sendCommand 'echo "rc_parallel=\"YES\"" >> /etc/rc.conf'
-    sendCommand 'sed -ri "s,^overwrite=.*$,overwrite=0," /etc/update-extlinux.conf'
-    sendCommand 'sed -ri "s,^TIMEOUT .*$,TIMEOUT 1," /boot/extlinux.conf'
+    sendCommand 'sed -ri "s,^GRUB_TIMEOUT=.*$,GRUB_TIMEOUT=0," /etc/default/grub'
+    sendCommand 'grub-mkconfig -o /boot/grub/grub.cfg'
     sendCommand 'sed -ri "s,^(user:.*)/a?sh,\1/bash," /etc/passwd'
     sendCommand 'passwd -l root'
     writeFile /etc/doas.d/doas.conf < ./files/doas.conf
