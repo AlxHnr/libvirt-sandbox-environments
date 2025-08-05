@@ -6,6 +6,7 @@ dbus
 dbus-x11
 doas
 dunst
+emptty
 font-dejavu
 htop
 neovim
@@ -17,7 +18,6 @@ spice-vdagent
 tint2
 wmctrl
 xdg-utils
-xinit
 xrandr
 xsel
 xsetroot

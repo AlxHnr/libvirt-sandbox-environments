@@ -405,10 +405,6 @@ setupUserHomedir()
   config_color="$2"
   config_kiosk="$3"
 
-  writeFile "$path_to_homedir/.profile" < ./files/profile
-  writeFile "$path_to_homedir/.xinitrc" < ./files/xinitrc
-  writeFile "$path_to_homedir/.Xresources" < ./files/Xresources
-
   sendCommand "mkdir -p '$path_to_homedir/.config/openbox/'"
   {
     cat ./files/openbox-autostart.sh
@@ -416,6 +412,8 @@ setupUserHomedir()
     printf 'xsetroot -solid "#%s"\n' "$config_color"
   } | writeFile "$path_to_homedir/.config/openbox/autostart.sh"
   sendCommand "chmod +x '$path_to_homedir/.config/openbox/autostart.sh'"
+  writeFile "$path_to_homedir/.config/openbox/environment" < ./files/openbox-environment.sh
+  writeFile "$path_to_homedir/.Xresources" < ./files/Xresources
 
   {
     cat ./files/openbox-rc.xml
@@ -593,6 +591,8 @@ setupVM()
     sendCommand 'sed -ri "s,^GRUB_TIMEOUT=.*$,GRUB_TIMEOUT=0," /etc/default/grub'
     sendCommand 'grub-mkconfig -o /boot/grub/grub.cfg'
     sendCommand 'sed -ri "s,^(user:.*)/a?sh,\1/bash," /etc/passwd'
+    sendCommand 'addgroup nopasswdlogin'
+    sendCommand 'addgroup user nopasswdlogin'
     sendCommand 'passwd -l root'
     writeFile /etc/doas.d/doas.conf < ./files/doas.conf
     {
