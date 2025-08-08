@@ -87,6 +87,13 @@ beancount
 fava
 ```
 
+The optional file `./vm-configs/YOUR_VM_NAME/modules` can contain a list of modules to be loaded
+during VM startup:
+
+```
+amdgpu
+```
+
 **Note**: These files will only be read during VM creation. Updating them has no effect on already
 existing VMs.
 

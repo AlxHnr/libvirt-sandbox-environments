@@ -579,6 +579,8 @@ setupVM()
     sendCommand "apk add --no-progress $(escapeAndJoin < ./files/packages)"
     test ! -e "$vm_config_dir/packages" ||
       sendCommand "apk add --no-progress $(escapeAndJoin < "$vm_config_dir/packages")"
+    test ! -e "$vm_config_dir/modules" ||
+      writeFile /etc/modules-load.d/custom-modules.conf < "$vm_config_dir/modules"
 
     sendCommand 'rc-update del crond default'
     sendCommand 'rc-update del udev-settle sysinit'
