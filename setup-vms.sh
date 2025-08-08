@@ -169,6 +169,7 @@ populateVMVariables()
   cfg_autostart='false'
   cfg_printer='false'
   cfg_usb=''
+  cfg_cpupin=''
   cfg_topoext='false'
 
   # shellcheck disable=SC2094
@@ -199,6 +200,15 @@ populateVMVariables()
           getUsbClassCodes "$device" >/dev/null
           cfg_usb="$cfg_usb $device"
         done;;
+      cpupin=*)
+        test -z "$cfg_cpupin" || die "redefinition of cpu affinity list in $2: \"$line\""
+        value=$(parseLine "$line" '^cpupin=[0-9]+:[0-9]+(,[0-9]+:[0-9]+)*$' "$2")
+        cfg_cpupin=$(printf '%s\n' "$value" | tr ',' '\n' | tr ':' ' ' | sort -n)
+        value=$(printf '%s\n' "$cfg_cpupin" | grep -oE '^\S+' | uniq -c | grep -vE '^\s*1 ' || true)
+        if printf '%s\n' "$value" | grep -q .; then
+          die "cpu core pinned multiple times in $2: \"$line\""
+        fi
+        ;;
       topoext) cfg_topoext='true';;
       *) die "invalid line in $2: \"$line\"";;
     esac
@@ -227,6 +237,7 @@ populateVMVariables()
     vm_autostart='NULL'
     vm_printer='NULL'
     vm_usb='NULL'
+    vm_cpupin='NULL'
     vm_topoext='NULL'
   else
     # Values too expensive to retrieve
@@ -273,6 +284,9 @@ populateVMVariables()
       vm_usb="$vm_usb $device_type"
     done
 
+    vm_cpupin=$(virsh vcpupin "$1" --config |
+      sed -r 's/^\s*(\S+)\s+(\S+)$/\1 \2/' | grep '^[0-9]' | grep -v ' 0-' | sort -n)
+
     printf '%s\n' "$xml" | grep -qE '<feature \S+ name=.\<topoext\>' &&
       vm_topoext='true' || vm_topoext='false'
   fi
@@ -293,6 +307,7 @@ populateVMVariables()
   test "$vm_internet" = "$cfg_internet" || deviations="$deviations internet"
   test "$vm_autostart" = "$cfg_autostart" || deviations="$deviations autostart"
   test "$vm_usb" = "$cfg_usb" || deviations="$deviations usb"
+  test "$vm_cpupin" = "$cfg_cpupin" || deviations="$deviations cpupin"
   test "$vm_topoext" = "$cfg_topoext" || deviations="$deviations topoext"
   vm_cfg_deviations="$deviations"
   unset deviations
@@ -383,6 +398,13 @@ reapplyConfigFlags()
           redirfilter="<redirfilter>$allow_rules<usbdev allow=\"no\"/></redirfilter>"
           EDITOR="sed -ri 's|(</devices>)|$redirfilter\1|'" virsh edit "$vm_name"
         fi
+        ;;
+      cpupin)
+        virt-xml "$vm_name" --edit --cputune 'xpath.delete=.'
+        printf '%s\n' "$cfg_cpupin" | grep . |
+          while read -r guest_cpu host_cpu; do
+            virsh vcpupin "$vm_name" --config "$guest_cpu" "$host_cpu" >/dev/null
+          done
         ;;
       topoext)
         if test "$cfg_topoext" = 'true'; then

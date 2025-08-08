@@ -1,0 +1,6 @@
+color=abcdef
+cores=3
+memory=768
+disksize=8
+cpupin=0:0,1:1,2:2
+cpupin=4:7

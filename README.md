@@ -55,6 +55,7 @@ root_tty2
 |        gpu       |          |        | Allow the VM to utilize the hosts GPU                           |
 |     internet     |          |        | Allow the VM to access the internet                             |
 |      usb=...     |          |        | Allow attaching USB devices to the VM, see below                |
+|    cpupin=...    |          |        | Pin guest cores to host cores, e.g. `cpupin=0:8,1:9,2:10,3:11`  |
 |      topoext     |          |        | AMD CPU feature for passing through SMT topology, see FAQ below |
 
 **Static** means the flag will only be applied during VM creation and will not be updated by

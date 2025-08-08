@@ -208,6 +208,30 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
       assert grep -q 'invalid line in \./test-files/configs/invalid-line\.txt: "invalid line"$'
   )
 
+  testName 'populateVMVariables - invalid cpupin'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/invalid-cpupin.txt 2>&1 |
+      assert grep -q 'invalid value in \./test-files/configs/invalid-cpupin\.txt: "cpupin=invalid"$'
+  )
+
+  testName 'populateVMVariables - empty cpupin'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/invalid-cpupin-empty.txt 2>&1 |
+      assert grep -q 'invalid value in \./test-files/configs/invalid-cpupin-empty\.txt: "cpupin="$'
+  )
+
+  testName 'populateVMVariables - duplicate cpupin'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/invalid-cpupin-duplicate.txt 2>&1 |
+      assert grep -q 'cpu core pinned multiple times in \./test-files/configs/invalid-cpupin-duplicate\.txt: "cpupin='
+  )
+
+  testName 'populateVMVariables - redefinition of cpupin'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/invalid-cpupin-redefinition.txt 2>&1 |
+      assert grep -q 'redefinition of cpu affinity list in ./test-files/configs/invalid-cpupin-redefinition.txt: "cpupin=4:7"$'
+  )
+
   testName 'populateVMVariables - reject invalid usb device lists'
   (
     populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-empty.txt 2>&1 |
@@ -791,6 +815,77 @@ testName 'topoext flag'
     assert test "$cfg_topoext" = 'false'
     assert test "$vm_topoext" = 'false'
     assert test "$vm_cfg_deviations" = ''
+  )
+)
+
+testName 'cpupin flag'
+# shellcheck disable=SC2154
+(
+  trap 'virsh undefine e1e1469d-c271-4402-b9c3-5c14e0f97fb0' EXIT
+  virsh define ./test-files/sample-vm-20-cores.xml
+  vm_name="vm-scripts-virtual-machine-for-testing-cpupin"
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-1-empty.txt
+    assert test -z "$cfg_cpupin"
+    assert test -z "$vm_cpupin"
+    assert test -z "$vm_cfg_deviations"
+  )
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-2.txt
+    assert test -n "$cfg_cpupin"
+    assert test -z "$vm_cpupin"
+    assert test "$vm_cfg_deviations" = ' cpupin'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/cpupin-2.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-2.txt
+    assert test -n "$cfg_cpupin"
+    assert test -n "$vm_cpupin"
+    assert test -z "$vm_cfg_deviations"
+  )
+  virsh vcpupin "$vm_name" --config | assert grep -qE '^\s*0\s+0$'
+  virsh vcpupin "$vm_name" --config | assert grep -qE '^\s*1\s+1$'
+  virsh vcpupin "$vm_name" --config | assert grep -qE '^\s*4\s+2$'
+  virsh vcpupin "$vm_name" --config | assert grep -qE '^\s*12\s+12$'
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-2-shuffled-order.txt
+    assert test -n "$cfg_cpupin"
+    assert test -n "$vm_cpupin"
+    assert test -z "$vm_cfg_deviations"
+  )
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-3.txt
+    assert test -n "$cfg_cpupin"
+    assert test -n "$vm_cpupin"
+    assert test "$vm_cfg_deviations" = ' cpupin'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/cpupin-3.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-3.txt
+    assert test -n "$cfg_cpupin"
+    assert test -n "$vm_cpupin"
+    assert test -z "$vm_cfg_deviations"
+  )
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-1-empty.txt
+    assert test -z "$cfg_cpupin"
+    assert test -n "$vm_cpupin"
+    assert test "$vm_cfg_deviations" = ' cpupin'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/cpupin-1-empty.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpupin-1-empty.txt
+    assert test -z "$cfg_cpupin"
+    assert test -z "$vm_cpupin"
+    assert test -z "$vm_cfg_deviations"
   )
 )
 

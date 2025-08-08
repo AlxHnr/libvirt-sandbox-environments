@@ -1,0 +1,4 @@
+color=abcdef
+cores=20
+memory=768
+disksize=8
