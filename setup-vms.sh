@@ -645,6 +645,7 @@ setupVM()
     sendCommand 'echo "rc_parallel=\"YES\"" >> /etc/rc.conf'
     sendCommand 'sed -ri "s,^GRUB_TIMEOUT=.*$,GRUB_TIMEOUT=0," /etc/default/grub'
     sendCommand 'grub-mkconfig -o /boot/grub/grub.cfg'
+    sendCommand 'echo "user hard nofile 524288" >> /etc/security/limits.conf'
     sendCommand 'sed -ri "s,^(user:.*)/a?sh,\1/bash," /etc/passwd'
     sendCommand 'addgroup nopasswdlogin'
     sendCommand 'addgroup user nopasswdlogin'
