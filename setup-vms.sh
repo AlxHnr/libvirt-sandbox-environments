@@ -178,7 +178,7 @@ populateVMVariables()
       color=*) cfg_color=$(parseLine "$line" '^color=[A-Fa-f0-9]{6}$' "$2");;
       memory=*) cfg_memory=$(parseLine "$line" '^memory=[1-9]+[0-9]*$' "$2");;
       cores=*)
-        cfg_cores=$(parseLine "$line" '^cores=([1-9]+[0-9]*|ALL)$' "$2" |
+        cfg_cores=$(parseLine "$line" '^cores=([1-9]+[0-9]*(\*[1-9]+[0-9]*)?|ALL)$' "$2" |
           sed -r "s,ALL,$(nproc)," | grep .)
         ;;
       disksize=*) cfg_disksize=$(parseLine "$line" '^disksize=[1-9]+[0-9]*$' "$2");;
@@ -249,7 +249,11 @@ populateVMVariables()
       vm_printer='??????'
     }
 
-    vm_cores=$(printf '%s\n' "$xml" | grep -m1 '<vcpu placement\>' | grep -oE '[0-9]+')
+    vm_cores=$(printf '%s\n' "$xml" | grep -E '<topology [^>]+ cores=' |
+      sed -r 's/^.* cores=.([0-9]+). threads=.([0-9]+).*$/\1*\2/')
+    test -n "$vm_cores" ||
+      vm_cores=$(printf '%s\n' "$xml" | grep -m1 '<vcpu placement\>' | grep -oE '[0-9]+')
+
     vm_memory=$(printf '%s\n' "$xml" | grep -m1 '<currentMemory\>' | grep -oE '[0-9]+' |
       xargs printf '%s / 1024\n' | bc)
     vm_disksize=$(virsh domblkinfo --human "$1" vda 2>&1 | grep '^Capacity' | grep -oE ' [0-9]+' |
@@ -323,7 +327,20 @@ reapplyConfigFlags()
   for flag in $vm_cfg_deviations; do
     printf 'updating vm %s: flag \"%s\" has changed\n' "$vm_name" "$flag"
     case "$flag" in
-      cores) virt-xml "$vm_name" --edit --vcpus "$cfg_cores";;
+      cores)
+        vcpus=$(printf '%s\n' "$cfg_cores" | bc)
+        virt-xml "$vm_name" --edit --cpu 'xpath.delete=./topology'
+        virt-xml "$vm_name" --edit --cpu 'xpath.delete=./cache'
+        virt-xml "$vm_name" --edit --vcpus "$vcpus"
+
+        if printf '%s\n' "$cfg_cores" | grep -q '\*'; then
+          tcores=$(printf '%s\n' "$cfg_cores" | grep -oE '^[0-9]+')
+          threads=$(printf '%s\n' "$cfg_cores" | grep -oE '[0-9]+$')
+          virt-xml "$vm_name" --edit --cpu \
+            "xpath1.set=./topology/@sockets=1,xpath2.set=./topology/@cores=$tcores,xpath3.set=./topology/@threads=$threads"
+          virt-xml "$vm_name" --edit --cpu 'xpath.set=./cache/@mode=passthrough'
+        fi
+        ;;
       memory) virt-xml "$vm_name" --edit --memory "memory=$cfg_memory,maxmemory=$cfg_memory";;
       disksize)
         printf 'ignoring changed config flag \"disksize\" in %s\n' "$vm_config_path" >&2

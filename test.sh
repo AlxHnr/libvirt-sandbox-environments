@@ -889,6 +889,66 @@ testName 'cpupin flag'
   )
 )
 
+testName 'cpu topology'
+# shellcheck disable=SC2154
+(
+  trap 'virsh undefine 3abd672c-b187-49ab-bb96-1646772547df' EXIT
+  virsh define ./test-files/sample-vm-definition-1.xml
+  vm_name="vm-scripts-virtual-machine-for-testing-1"
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpu-topology-1.txt
+    assert test "$cfg_cores" = '4*2'
+    assert test "$vm_cores" = '3'
+    assert test "$vm_cfg_deviations" = 'cores'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/cpu-topology-1.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpu-topology-1.txt
+    assert test "$cfg_cores" = '4*2'
+    assert test "$vm_cores" = '4*2'
+    assert test -z "$vm_cfg_deviations"
+    xml=$(virsh dumpxml --inactive "$vm_name")
+    printf '%s\n' "$xml" | assert grep -qF '>8</vcpu>'
+    printf '%s\n' "$xml" | assert grep -qE '<cache\s+mode=.passthrough./>'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/cpu-topology-2.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpu-topology-2.txt
+    assert test "$cfg_cores" = '2*4'
+    assert test "$vm_cores" = '2*4'
+    assert test -z "$vm_cfg_deviations"
+    xml=$(virsh dumpxml --inactive "$vm_name")
+    printf '%s\n' "$xml" | assert grep -qF '>8</vcpu>'
+    printf '%s\n' "$xml" | assert grep -qE '<cache\s+mode=.passthrough./>'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/cpu-topology-3.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/cpu-topology-3.txt
+    assert test "$cfg_cores" = '16*2'
+    assert test "$vm_cores" = '16*2'
+    assert test -z "$vm_cfg_deviations"
+    xml=$(virsh dumpxml --inactive "$vm_name")
+    printf '%s\n' "$xml" | assert grep -qF '>32</vcpu>'
+    printf '%s\n' "$xml" | assert grep -qE '<cache\s+mode=.passthrough./>'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-deviation-test-1-no-changes.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-deviation-test-1-no-changes.txt
+    assert test "$cfg_cores" = '3'
+    assert test "$vm_cores" = '3'
+    assert test -z "$vm_cfg_deviations"
+    xml=$(virsh dumpxml --inactive "$vm_name")
+    printf '%s\n' "$xml" | assert grep -qF '>3</vcpu>'
+    { ! printf '%s\n' "$xml" | grep -qE '<cache mode=.\<passthrough\>'; } ||
+      assert false 'reapplyConfigFlags: xml contains cpu cache mode: passthrough'
+  )
+)
+
 testName 'makeVirtInstallCommand'
 (
   printf 'Generating xml definition...\n'
