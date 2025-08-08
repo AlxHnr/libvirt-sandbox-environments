@@ -756,6 +756,44 @@ testName 'reapplyConfigFlags - disksize'
   )
 )
 
+testName 'topoext flag'
+# shellcheck disable=SC2154
+(
+  trap 'virsh undefine 3abd672c-b187-49ab-bb96-1646772547df' EXIT
+  virsh define ./test-files/sample-vm-definition-1.xml
+  vm_name="vm-scripts-virtual-machine-for-testing-1"
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-deviation-test-1-no-changes.txt
+    assert test "$cfg_topoext" = 'false'
+    assert test "$vm_topoext" = 'false'
+    assert test -z "$vm_cfg_deviations"
+  )
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/topoext.txt
+    assert test "$cfg_topoext" = 'true'
+    assert test "$vm_topoext" = 'false'
+    assert test "$vm_cfg_deviations" = ' topoext'
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/topoext.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/topoext.txt
+    assert test "$cfg_topoext" = 'true'
+    assert test "$vm_topoext" = 'true'
+    assert test "$vm_cfg_deviations" = ''
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-deviation-test-1-no-changes.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-deviation-test-1-no-changes.txt
+    assert test "$cfg_topoext" = 'false'
+    assert test "$vm_topoext" = 'false'
+    assert test "$vm_cfg_deviations" = ''
+  )
+)
+
 testName 'makeVirtInstallCommand'
 (
   printf 'Generating xml definition...\n'

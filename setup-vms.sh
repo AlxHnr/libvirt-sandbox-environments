@@ -169,6 +169,7 @@ populateVMVariables()
   cfg_autostart='false'
   cfg_printer='false'
   cfg_usb=''
+  cfg_topoext='false'
 
   # shellcheck disable=SC2094
   while read -r line; do
@@ -198,6 +199,7 @@ populateVMVariables()
           getUsbClassCodes "$device" >/dev/null
           cfg_usb="$cfg_usb $device"
         done;;
+      topoext) cfg_topoext='true';;
       *) die "invalid line in $2: \"$line\"";;
     esac
   done < "$2"
@@ -225,6 +227,7 @@ populateVMVariables()
     vm_autostart='NULL'
     vm_printer='NULL'
     vm_usb='NULL'
+    vm_topoext='NULL'
   else
     # Values too expensive to retrieve
     # shellcheck disable=SC2034
@@ -269,6 +272,9 @@ populateVMVariables()
     for device_type in $device_types; do
       vm_usb="$vm_usb $device_type"
     done
+
+    printf '%s\n' "$xml" | grep -qE '<feature \S+ name=.\<topoext\>' &&
+      vm_topoext='true' || vm_topoext='false'
   fi
   unset xml
 
@@ -287,6 +293,7 @@ populateVMVariables()
   test "$vm_internet" = "$cfg_internet" || deviations="$deviations internet"
   test "$vm_autostart" = "$cfg_autostart" || deviations="$deviations autostart"
   test "$vm_usb" = "$cfg_usb" || deviations="$deviations usb"
+  test "$vm_topoext" = "$cfg_topoext" || deviations="$deviations topoext"
   vm_cfg_deviations="$deviations"
   unset deviations
 }
@@ -375,6 +382,13 @@ reapplyConfigFlags()
             done)
           redirfilter="<redirfilter>$allow_rules<usbdev allow=\"no\"/></redirfilter>"
           EDITOR="sed -ri 's|(</devices>)|$redirfilter\1|'" virsh edit "$vm_name"
+        fi
+        ;;
+      topoext)
+        if test "$cfg_topoext" = 'true'; then
+          virt-xml "$vm_name" --edit --cpu 'xpath.set=./feature/@name=topoext'
+        else
+          virt-xml "$vm_name" --edit --cpu 'xpath.delete=./feature/@name=topoext'
         fi
         ;;
       *) die "unable to handle change of config flag \"$flag\" in $vm_config_path";;

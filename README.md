@@ -38,23 +38,24 @@ root_tty2
 
 ### Configuration flags
 
-|       Flag       | Required | Static | Description                                              |
-|:----------------:|:--------:|:------:|----------------------------------------------------------|
-|       cores      |    ✔️    |        | Integer larger than 0 or the string `ALL`                |
-|      memory      |    ✔️    |        | Memory to assign in MiB                                  |
-|       color      |    ✔️    |   ✔️   | Background color for distinguishing VMs                  |
-|     disksize     |    ✔️    |   ✔️   | Size of the VMs qcow2 image                              |
-|  expose\_homedir |          |   ✔️   | Create `/vm-data/VM_NAME/home/` and mount it into the VM |
-|    root\_tty2    |          |   ✔️   | Spawn a terminal on TTY2 with root auto-login            |
-|       kiosk      |          |   ✔️   | Start all programs maximized without window decoration   |
-|      printer     |          |   ✔️   | Setup CUPS                                               |
-|     autostart    |          |        | Start the VM at boot                                     |
-|     clipboard    |          |        | Allow the VM to synchronize with the hosts clipboard     |
-|       sound      |          |        | Allow the VM to output sound                             |
-| sound+microphone |          |        | Allow the VM to output sound and access the microphone   |
-|        gpu       |          |        | Allow the VM to utilize the hosts GPU                    |
-|     internet     |          |        | Allow the VM to access the internet                      |
-|      usb=...     |          |        | Allow attaching USB devices to the VM, see below         |
+|       Flag       | Required | Static | Description                                                     |
+|:----------------:|:--------:|:------:|-----------------------------------------------------------------|
+|       cores      |    ✔️    |        | Integer larger than 0 or the string `ALL`                       |
+|      memory      |    ✔️    |        | Memory to assign in MiB                                         |
+|       color      |    ✔️    |   ✔️   | Background color for distinguishing VMs                         |
+|     disksize     |    ✔️    |   ✔️   | Size of the VMs qcow2 image                                     |
+|  expose\_homedir |          |   ✔️   | Create `/vm-data/VM_NAME/home/` and mount it into the VM        |
+|    root\_tty2    |          |   ✔️   | Spawn a terminal on TTY2 with root auto-login                   |
+|       kiosk      |          |   ✔️   | Start all programs maximized without window decoration          |
+|      printer     |          |   ✔️   | Setup CUPS                                                      |
+|     autostart    |          |        | Start the VM at boot                                            |
+|     clipboard    |          |        | Allow the VM to synchronize with the hosts clipboard            |
+|       sound      |          |        | Allow the VM to output sound                                    |
+| sound+microphone |          |        | Allow the VM to output sound and access the microphone          |
+|        gpu       |          |        | Allow the VM to utilize the hosts GPU                           |
+|     internet     |          |        | Allow the VM to access the internet                             |
+|      usb=...     |          |        | Allow attaching USB devices to the VM, see below                |
+|      topoext     |          |        | AMD CPU feature for passing through SMT topology, see FAQ below |
 
 **Static** means the flag will only be applied during VM creation and will not be updated by
 subsequent runs of `./setup-vms.sh`.
@@ -191,3 +192,10 @@ graphroot = "/var/lib/user/containers/storage"
 
 Note that this requires the `fuse-overlayfs` package to be installed inside the VM. Also make sure
 that the VMs configured disksize is large enough to store your images.
+
+## What does the topoext flag do?
+
+It prevents multiple CPU threads on the same core from being seen as separate CPU cores. When using
+this flag, make sure your vcpu topology is defined properly and the cores are pinned accordingly.
+
+![topoext.png](https://raw.githubusercontent.com/AlxHnr/media/refs/heads/gh-pages/topoext.png)
