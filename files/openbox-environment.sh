@@ -1,3 +1,5 @@
+. /etc/profile
+
 export PS1='\W $ '
 export FLATPAK_USER_DIR='/var/lib/user/flatpak'
 test ! -e "$HOME/.local/bin" || export PATH="$PATH:$HOME/.local/bin"
