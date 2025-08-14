@@ -23,7 +23,7 @@ Then follow the instructions located at the top of each file in `./host-configs/
 # Defining VMs
 
 Create a directory in `./vm-configs/` named after the VM to create and configure it as described
-below. Then run `./setup-vms.sh`. Here is an example config to be placed in
+below. Then run `./setup-vms.sh ./vm-configs/`. Here is an example config to be placed in
 `./vm-configs/YOUR_VM_NAME/config`:
 
 ```
@@ -58,7 +58,7 @@ root_tty2
 |      topoext     |          |        | AMD CPU feature for passing through SMT topology, see FAQ below             |
 
 **Static** means the flag will only be applied during VM creation and will not be updated by
-subsequent runs of `./setup-vms.sh`.
+subsequent runs of `./setup-vms.sh ./vm-configs/`.
 
 The `usb=...` flag accepts `android`, `printer`, `HID` and `webcam`. E.g. `usb=printer,webcam`.
 
@@ -90,8 +90,8 @@ fava
 
 The optional file `./vm-configs/YOUR_VM_NAME/setup.sh` will be run as root inside the VM during
 setup. It runs after system configuration and package installation, but before the users homedir
-gets mounted. If this script exits with a non-zero exit status, `./setup-vms.sh` will also fail with
-the same exit status.
+gets mounted. If this script exits with a non-zero exit status, `./setup-vms.sh ./vm-configs/` will
+also fail with the same exit status.
 
 ```sh
 #!/bin/sh -e
@@ -144,13 +144,13 @@ This script will send update commands to running VMs and keeps waiting for futur
 ## How to recreate a VM from scratch?
 
 Delete the VM. E.g. trough virt-manager, optionally together with its qcow2 image and then run
-`./setup-vms.sh`.
+`./setup-vms.sh ./vm-configs/`.
 
 ## I have set the clipboard flag but am unable to copy/paste
 
-The VM must be restarted after applying the clipboard flag via `./setup-vms.sh`. Make sure that
-virt-viewer has `Share clipboard` enabled in its preferences, which can be found at the top right
-corner of the VM window.
+The VM must be restarted after applying the clipboard flag via `./setup-vms.sh ./vm-configs/`. Make
+sure that virt-viewer has `Share clipboard` enabled in its preferences, which can be found at the
+top right corner of the VM window.
 
 ## How to increase/decrease font scaling?
 
@@ -171,9 +171,10 @@ They cause webcam glitches due to some bug in qemu/kvm.
 
 ## How to do audio work if VMs have massively inconsistent audio latencies?
 
-Remove `sound` and `sound+microphone` from the VM configuration and rerun `./setup-vms.sh`. Use
-`lsusb.py -ciu` to find the PCI device to which your sound hardware is attached. Use virt-manager to
-manually assign this PCI device to your VM. When the VM starts, use alsamixer to adjust the volume.
+Remove `sound` and `sound+microphone` from the VM configuration and rerun `./setup-vms.sh
+./vm-configs/`. Use `lsusb.py -ciu` to find the PCI device to which your sound hardware is attached.
+Use virt-manager to manually assign this PCI device to your VM. When the VM starts, use alsamixer to
+adjust the volume.
 
 **Note**: You must assign whole PCI devices instead of just a single USB device to fix the latency,
 according to my own testing.

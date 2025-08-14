@@ -567,13 +567,14 @@ setupPip()
 setupVM()
 (
   vm_name="$1"
-  alpine_version="$2"
-  alpine_iso="$3"
-  vm_data_mountpoint="$4"
+  path_to_vm_configs="$2"
+  alpine_version="$3"
+  alpine_iso="$4"
+  vm_data_mountpoint="$5"
 
   vm_dir="$vm_data_mountpoint/$vm_name"
   vm_image="$vm_dir/image.qcow2"
-  vm_config_dir="vm-configs/$vm_name"
+  vm_config_dir="$path_to_vm_configs/$vm_name"
   populateVMVariables "$vm_name" "$vm_config_dir/config"
 
   if vmExists "$vm_name"; then
@@ -692,6 +693,11 @@ vm_data_mountpoint="/vm-data"
 alpine_iso="$vm_data_mountpoint/alpine-standard-$alpine_version-x86_64.iso"
 export LIBVIRT_DEFAULT_URI='qemu:///system'
 
+test "$#" -ge 1 || die 'no directory with vm configs specified'
+test "$#" -lt 2 || die 'too many arguments'
+path_to_vm_configs="$1"
+test -d "$path_to_vm_configs" || die "not a valid directory: \"$path_to_vm_configs\""
+
 test "$(stat -c %U:%G "$vm_data_mountpoint")" = 'user:qemu' ||
   die "invalid directory owners, expected user:qemu: \"$vm_data_mountpoint\""
 test "$(stat -c %a "$vm_data_mountpoint")" = '770' ||
@@ -699,8 +705,9 @@ test "$(stat -c %a "$vm_data_mountpoint")" = '770' ||
 test -e /tmp/pipewire-0 ||
   die 'socket does not exist: "/tmp/pipewire-0", see ./host-configs/ for more informations'
 
-(cd ./vm-configs/ && printf '%s\n' *) |
+(cd "$path_to_vm_configs" && printf '%s\n' *) |
 while read -r vm_name; do
-  vmExists "$vm_name" || setupVM "$vm_name" "$alpine_version" "$alpine_iso" "$vm_data_mountpoint"
-  reapplyConfigFlags "$vm_name" "vm-configs/$vm_name/config"
+  vmExists "$vm_name" ||
+    setupVM "$vm_name" "$path_to_vm_configs" "$alpine_version" "$alpine_iso" "$vm_data_mountpoint"
+  reapplyConfigFlags "$vm_name" "$path_to_vm_configs/$vm_name/config"
 done

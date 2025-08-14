@@ -23,10 +23,11 @@ dumpFile()
   test ! -e "$filepath" || cat "$filepath"
 )
 
-cmd="$1"
-vm_name="$2" # only mandatory for some commands
+path_to_vm_configs="$1"
+cmd="$2"
+vm_name="$3" # only mandatory for some commands
 
-cd "$(dirname "$0")/vm-configs/"
+cd "$path_to_vm_configs"
 vm_data_mountpoint="/vm-data"
 case "$cmd" in
   listConfiguredVMs) printf '%s\n' *;;
