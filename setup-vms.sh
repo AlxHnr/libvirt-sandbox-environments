@@ -667,6 +667,13 @@ setupVM()
     test ! -e "$vm_config_dir/flatpaks" || setupFlatpak "$vm_config_dir/flatpaks"
     test ! -e "$vm_config_dir/pip" || setupPip "$vm_config_dir/pip"
 
+    if test -e "$vm_config_dir/setup.sh"; then
+      writeFile /usr/local/bin/setup.sh < "$vm_config_dir/setup.sh"
+      sendCommand 'chmod +x /usr/local/bin/setup.sh'
+      sendCommand '/usr/local/bin/setup.sh'
+      sendCommand 'rm /usr/local/bin/setup.sh'
+    fi
+
     if test "$cfg_expose_homedir" = 'true'; then
       sendCommand 'echo "homedir_mount_tag /home/user virtiofs rw,relatime 0 0" >> /etc/fstab'
     else

@@ -89,6 +89,17 @@ beancount
 fava
 ```
 
+The optional file `./vm-configs/YOUR_VM_NAME/setup.sh` will be run as root inside the VM during
+setup. It runs after system configuration and package installation, but before the users homedir
+gets mounted. If this script exits with a non-zero exit status, `./setup-vms.sh` will also fail with
+the same exit status.
+
+```sh
+#!/bin/sh -e
+
+...
+```
+
 The optional file `./vm-configs/YOUR_VM_NAME/modules` can contain a list of modules to be loaded
 during VM startup:
 
