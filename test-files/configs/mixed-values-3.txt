@@ -5,4 +5,3 @@ disksize=27
 sound
 kiosk
 autostart
-printer

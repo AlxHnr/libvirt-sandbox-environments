@@ -167,7 +167,6 @@ populateVMVariables()
   cfg_root_tty2='false'
   cfg_kiosk='false'
   cfg_autostart='false'
-  cfg_printer='false'
   cfg_usb=''
   cfg_cpupin=''
   cfg_topoext='false'
@@ -191,7 +190,6 @@ populateVMVariables()
       root_tty2) cfg_root_tty2='true';;
       kiosk) cfg_kiosk='true';;
       autostart) cfg_autostart='true';;
-      printer) cfg_printer='true';;
       usb=*)
         test -z "$cfg_usb" || die "redefinition of usb device list in $2: \"$line\""
         value=$(parseLine "$line" '^usb=(,?[[:alnum:]]+)+$' "$2")
@@ -235,7 +233,6 @@ populateVMVariables()
     vm_root_tty2='NULL'
     vm_kiosk='NULL'
     vm_autostart='NULL'
-    vm_printer='NULL'
     vm_usb='NULL'
     vm_cpupin='NULL'
     vm_topoext='NULL'
@@ -246,7 +243,6 @@ populateVMVariables()
       vm_color='??????'
       vm_root_tty2='??????'
       vm_kiosk='??????'
-      vm_printer='??????'
     }
 
     vm_cores=$(printf '%s\n' "$xml" | grep -E '<topology [^>]+ cores=' |
@@ -530,13 +526,6 @@ makeVirtInstallCommand()
     --noreboot\n' "$vm_name" "$disksize" "$vm_image"
 )
 
-setupPrinter()
-(
-  sendCommand 'apk add cups cups-filters system-config-printer'
-  sendCommand 'rc-update add cupsd afterlogin'
-  sendCommand 'adduser user lpadmin'
-)
-
 setupFlatpak()
 (
   flatpack_app_file="$1"
@@ -632,8 +621,6 @@ setupVM()
     sendCommand "apk add --no-progress $(escapeAndJoin < ./files/packages)"
     test ! -e "$vm_config_dir/packages" ||
       sendCommand "apk add --no-progress $(escapeAndJoin < "$vm_config_dir/packages")"
-    test ! -e "$vm_config_dir/modules" ||
-      writeFile /etc/modules-load.d/custom-modules.conf < "$vm_config_dir/modules"
 
     sendCommand 'rc-update del crond default'
     sendCommand 'rc-update del udev-settle sysinit'
@@ -660,7 +647,6 @@ setupVM()
     writeFile /usr/local/bin/update-system.sh < ./files/update-system.sh
     sendCommand 'chmod +x /usr/local/bin/update-system.sh'
 
-    test "$cfg_printer" != 'true' || setupPrinter
 
     sendCommand 'mkdir -m 700 /var/lib/user/'
     sendCommand 'chown user:user /var/lib/user/'

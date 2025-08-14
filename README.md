@@ -47,7 +47,6 @@ root_tty2
 |  expose\_homedir |          |   ✔️   | Create `/vm-data/VM_NAME/home/` and mount it into the VM                    |
 |    root\_tty2    |          |   ✔️   | Spawn a terminal on TTY2 with root auto-login                               |
 |       kiosk      |          |   ✔️   | Start all programs maximized without window decoration                      |
-|      printer     |          |   ✔️   | Setup CUPS                                                                  |
 |     autostart    |          |        | Start the VM at boot                                                        |
 |     clipboard    |          |        | Allow the VM to synchronize with the hosts clipboard                        |
 |       sound      |          |        | Allow the VM to output sound                                                |
@@ -98,13 +97,6 @@ the same exit status.
 #!/bin/sh -e
 
 ...
-```
-
-The optional file `./vm-configs/YOUR_VM_NAME/modules` can contain a list of modules to be loaded
-during VM startup:
-
-```
-amdgpu
 ```
 
 **Note**: These files will only be read during VM creation. Updating them has no effect on already

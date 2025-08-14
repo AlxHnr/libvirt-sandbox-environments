@@ -263,7 +263,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'false'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
-    assert test "$cfg_printer"        = 'false'
     assert test -z "$cfg_usb"
   )
 
@@ -284,7 +283,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'true'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
-    assert test "$cfg_printer"        = 'false'
     assert test -z "$cfg_usb"
   )
 
@@ -305,7 +303,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'false'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
-    assert test "$cfg_printer"        = 'false'
     assert test -z "$cfg_usb"
   )
 
@@ -326,7 +323,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'false'
     assert test "$cfg_kiosk"          = 'true'
     assert test "$cfg_autostart"      = 'true'
-    assert test "$cfg_printer"        = 'true'
     assert test -z "$cfg_usb"
   )
 
@@ -373,7 +369,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$vm_root_tty2"      = 'NULL'
     assert test "$vm_kiosk"          = 'NULL'
     assert test "$vm_autostart"      = 'NULL'
-    assert test "$vm_printer"        = 'NULL'
     assert test "$vm_usb"            = 'NULL'
   )
 )
@@ -429,7 +424,6 @@ testName 'populateVMVariables - extract flags from existing vm 1'
   assert test "$vm_root_tty2"      = '??????'
   assert test "$vm_kiosk"          = '??????'
   assert test "$vm_autostart"      = 'false'
-  assert test "$vm_printer"        = '??????'
   assert test -z "$vm_usb"
 )
 
