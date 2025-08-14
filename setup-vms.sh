@@ -703,12 +703,4 @@ test -e /tmp/pipewire-0 ||
 while read -r vm_name; do
   vmExists "$vm_name" || setupVM "$vm_name" "$alpine_version" "$alpine_iso" "$vm_data_mountpoint"
   reapplyConfigFlags "$vm_name" "vm-configs/$vm_name/config"
-
-  test "$1" != 'regenerate-exposed-homedirs' || (
-    homedir="$vm_data_mountpoint/$vm_name/home"
-    if test -e "$homedir"; then
-      populateVMVariables "$vm_name" "vm-configs/$vm_name/config"
-      setupExposedUserHomedir "$homedir" "$cfg_color" "$cfg_kiosk"
-    fi
-  )
 done
