@@ -117,7 +117,7 @@ security reasons.
 This script will send update commands to running VMs and keeps waiting for future VMs to start:
 
 ```sh
-./update-service.sh
+./update-service.sh ./vm-configs/
 ```
 
 # Known Bugs

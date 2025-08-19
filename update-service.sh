@@ -26,6 +26,11 @@ canDownload()
 cd "$(dirname "$0")"
 export LIBVIRT_DEFAULT_URI='qemu:///system'
 
+test "$#" -ge 1 || die 'no directory with vm configs specified'
+test "$#" -lt 2 || die 'too many arguments'
+path_to_vm_configs="$1"
+test -d "$path_to_vm_configs" || die "not a valid directory: \"$path_to_vm_configs\""
+
 state_dir="$XDG_RUNTIME_DIR/vm-update-service"
 mkdir -m 700 "$state_dir" || die "already running"
 trap 'rm -rf "$state_dir"' EXIT
@@ -39,7 +44,7 @@ while true; do
 
   virsh list --name | grep . |
     while read -r vm_name; do
-      grep -qxF 'internet' "./vm-configs/$vm_name/config" || continue
+      grep -qxF 'internet' "$path_to_vm_configs/$vm_name/config" || continue
       test ! -e "$state_dir/$vm_name" || continue
       virsh dumpxml --inactive "$vm_name" |
         grep -qF '<description>CUSTOM_AUTOSTART=' || continue
