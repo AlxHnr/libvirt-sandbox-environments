@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 # Tests either fail with an error code or by hanging forever. A successful testrun should complete
-# in a few seconds. The user running this script needs permissions to define and undefine vms.
+# in less than a minute. The user running this script needs permissions to define and undefine vms.
 
 cd "$(dirname "$0")"
 export SETUP_VMS_SH_DONT_RUN='true'

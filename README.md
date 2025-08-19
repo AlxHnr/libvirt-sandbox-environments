@@ -22,15 +22,15 @@ Then follow the instructions located at the top of each file in `./host-configs/
 
 # Defining VMs
 
-Create a directory in `./vm-configs/` named after the VM to create and configure it as described
-below. Then run `./setup-vms.sh ./vm-configs/`. Here is an example config to be placed in
+Create a directory, e.g. in `./vm-configs/`, named after the VM to create and configure it as
+described below. Then run `./setup-vms.sh ./vm-configs/`. Here is an example config to be placed in
 `./vm-configs/YOUR_VM_NAME/config`:
 
 ```
-color=bbbbbb
-cores=ALL
+cores=8
 memory=4096
 disksize=16
+color=03bbaf
 sound+microphone
 internet
 root_tty2
@@ -42,7 +42,7 @@ root_tty2
 |:----------------:|:--------:|:------:|-----------------------------------------------------------------------------|
 |       cores      |    ✔️    |        | vCPUs, e.g. `cores=8`, `cores=ALL` or `cores=4*2` to define thread topology |
 |      memory      |    ✔️    |        | Memory to assign in MiB                                                     |
-|       color      |    ✔️    |   ✔️   | Background color for distinguishing VMs                                     |
+|       color      |    ✔️    |   ✔️   | Wallpaper/background color for distinguishing VMs                           |
 |     disksize     |    ✔️    |   ✔️   | Size of the VMs qcow2 image                                                 |
 |  expose\_homedir |          |   ✔️   | Create `/vm-data/VM_NAME/home/` and mount it into the VM                    |
 |    root\_tty2    |          |   ✔️   | Spawn a terminal on TTY2 with root auto-login                               |
@@ -51,7 +51,7 @@ root_tty2
 |     clipboard    |          |        | Allow the VM to synchronize with the hosts clipboard                        |
 |       sound      |          |        | Allow the VM to output sound                                                |
 | sound+microphone |          |        | Allow the VM to output sound and access the microphone                      |
-|        gpu       |          |        | Allow the VM to utilize the hosts GPU                                       |
+|        gpu       |          |        | Allow the VM to utilize the hosts GPU via OpenGL                            |
 |     internet     |          |        | Allow the VM to access the internet                                         |
 |      usb=...     |          |        | Allow attaching USB devices to the VM, see below                            |
 |    cpupin=...    |          |        | Pin guest cores to host cores, e.g. `cpupin=0:8,1:9,2:10,3:11`              |
@@ -90,14 +90,8 @@ fava
 
 The optional file `./vm-configs/YOUR_VM_NAME/setup.sh` will be run as root inside the VM during
 setup. It runs after system configuration and package installation, but before the users homedir
-gets mounted. If this script exits with a non-zero exit status, `./setup-vms.sh ./vm-configs/` will
-also fail with the same exit status.
-
-```sh
-#!/bin/sh -e
-
-...
-```
+gets mounted. If this script exits with a non-zero exit status, `./setup-vms.sh` will also fail with
+the same exit status.
 
 **Note**: These files will only be read during VM creation. Updating them has no effect on already
 existing VMs.
@@ -128,8 +122,8 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 # Known Bugs
 
-* Fractional scaling (e.g. on GNOME) breaks VM window resizing. Set it to 100% (or a multiple it)
-  and configure this file instead: `./files/Xresources` -> `Xft.dpi`
+* Fractional scaling breaks VM window resizing. Set it to 100%, or a multiple it, and configure this
+  file instead: `./files/Xresources` -> `Xft.dpi`
 * On systems which remap capslock (e.g. to escape), it will cause the key to be [pressed
   twice](https://gitlab.freedesktop.org/spice/spice-gtk/-/issues/143). A workaround can be found
   here: <https://gitlab.freedesktop.org/spice/spice/-/issues/66>
@@ -143,8 +137,7 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 ## How to recreate a VM from scratch?
 
-Delete the VM. E.g. trough virt-manager, optionally together with its qcow2 image and then run
-`./setup-vms.sh ./vm-configs/`.
+Delete the VM trough virt-manager and rerun `./setup-vms.sh ./vm-configs/`.
 
 ## I have set the clipboard flag but am unable to copy/paste
 
@@ -165,7 +158,7 @@ See `./files/setup-alpine.cfg` and `./files/openbox-autostart.sh`.
 Find the PCI host devices to which your webcams are attached via `lsusb.py -ciu`. Add those PCI
 devices to your VM.
 
-### Why not just use a USB 3.0 controller?
+### Why not just use a qemu USB 3.0 controller?
 
 They cause webcam glitches due to some bug in qemu/kvm.
 

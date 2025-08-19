@@ -7,7 +7,7 @@
 
 [Desktop Entry]
 Name=Virt-Viewer (Workaround)
-Comment=This file only exists to store shortcut inhibitor prefs in flatpaks permission store.
+Comment=This file only exists to store shortcut inhibitor prefs in flatpaks permission store
 Exec=virt-viewer %u
 Type=Application
 Terminal=false
