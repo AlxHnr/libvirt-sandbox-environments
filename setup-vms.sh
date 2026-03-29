@@ -679,6 +679,7 @@ setupVM()
   virt-xml "$vm_name" --add-device --filesystem \
     "type=mount,source.dir=$vm_dir/home,target.dir=homedir_mount_tag,driver.type=virtiofs"
 
+  test ! -e "$vm_dir/home" || return 0
   printf 'Initializing "%s/home/"...\n' "$vm_dir"
   mkdir -p "$vm_dir/home"
   setupExposedUserHomedir "$vm_dir/home" "$cfg_color" "$cfg_kiosk"
