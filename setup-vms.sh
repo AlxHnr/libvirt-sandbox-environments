@@ -145,6 +145,15 @@ getUsbDeviceType()
   esac
 )
 
+getDisksize()
+(
+  vm_name="$1"
+  device_name="$2"
+
+  virsh domblkinfo --human "$vm_name" "$device_name" 2>&1 | grep '^Capacity' | grep -oE ' [0-9]+' |
+    grep -oE '\S+'
+)
+
 # Parse the config file of the specified vm and populate variables in the callers environment.
 # Variables starting with `cfg_` reflect the state of the config file, while variables starting
 # with `vm_` represent the current vm state.
@@ -158,6 +167,7 @@ populateVMVariables()
   # config_path="$2"
 
   unset cfg_color cfg_memory cfg_cores cfg_disksize
+  cfg_disksize_home=''
   cfg_expose_homedir='false'
   cfg_clipboard='false'
   cfg_sound='false'
@@ -181,6 +191,7 @@ populateVMVariables()
           sed -r "s,ALL,$(nproc)," | grep .)
         ;;
       disksize=*) cfg_disksize=$(parseLine "$line" '^disksize=[1-9]+[0-9]*$' "$2");;
+      disksize_home=*) cfg_disksize_home=$(parseLine "$line" '^disksize_home=[1-9]+[0-9]*$' "$2");;
       expose_homedir) cfg_expose_homedir='true';;
       clipboard) cfg_clipboard='true';;
       sound) cfg_sound='true';;
@@ -216,6 +227,9 @@ populateVMVariables()
   assertConfigFlagSet memory "$cfg_memory" "$2"
   assertConfigFlagSet cores "$cfg_cores" "$2"
   assertConfigFlagSet disksize "$cfg_disksize" "$2"
+  if test -n "$cfg_disksize_home" && test "$cfg_expose_homedir" = 'true'; then
+    die "use of incompatible flags in $2: disksize_home, expose_homedir"
+  fi
 
   xml=$(virsh dumpxml --inactive "$1" 2>/dev/null || printf '')
 
@@ -224,6 +238,7 @@ populateVMVariables()
     vm_cores='NULL'
     vm_memory='NULL'
     vm_disksize='NULL'
+    vm_disksize_home='NULL'
     vm_expose_homedir='NULL'
     vm_clipboard='NULL'
     vm_sound='NULL'
@@ -252,8 +267,8 @@ populateVMVariables()
 
     vm_memory=$(printf '%s\n' "$xml" | grep -m1 '<currentMemory\>' | grep -oE '[0-9]+' |
       xargs printf '%s / 1024\n' | bc)
-    vm_disksize=$(virsh domblkinfo --human "$1" vda 2>&1 | grep '^Capacity' | grep -oE ' [0-9]+' |
-      grep -oE '\S+' || printf '??????\n')
+    vm_disksize=$(getDisksize "$1" vda) || vm_disksize='??????'
+    vm_disksize_home=$(getDisksize "$1" vdz) || vm_disksize_home=''
     printf '%s\n' "$xml" | grep -q 'homedir_mount_tag' &&
       vm_expose_homedir='true' || vm_expose_homedir='false'
     printf '%s\n' "$xml" | grep -qE '<clipboard copypaste=.\<no\>' &&
@@ -298,6 +313,9 @@ populateVMVariables()
   if test "$vm_disksize" != "$cfg_disksize" && test "$vm_disksize" != '??????'; then
     deviations="$deviations disksize"
   fi
+  if test "$vm_disksize_home" != "$cfg_disksize_home"; then
+    deviations="$deviations disksize_home"
+  fi
   test "$vm_expose_homedir" = "$cfg_expose_homedir" || deviations="$deviations expose_homedir"
   test "$vm_clipboard" = "$cfg_clipboard" || deviations="$deviations clipboard"
   # Microphone must come after sound
@@ -338,8 +356,8 @@ reapplyConfigFlags()
         fi
         ;;
       memory) virt-xml "$vm_name" --edit --memory "memory=$cfg_memory,maxmemory=$cfg_memory";;
-      disksize)
-        printf 'ignoring changed config flag \"disksize\" in %s\n' "$vm_config_path" >&2
+      disksize|disksize_home)
+        printf 'ignoring changed config flag \"%s\" in %s\n' "$flag" "$vm_config_path" >&2
         ;;
       expose_homedir)
         printf 'ignoring changed config flag \"expose_homedir\" in %s\n' "$vm_config_path" >&2
@@ -510,7 +528,7 @@ makeVirtInstallCommand()
     --memory 512 \
     --boot uefi,loader_secure=no \
     --osinfo alpinelinux3.18 \
-    --disk size=%s,path=%q,driver.discard=unmap \
+    --disk size=%s,path=%q,driver.discard=unmap,target.dev=vda \
     --xml ./devices/graphics/clipboard/@copypaste=no \
     --xml ./devices/graphics/filetransfer/@enable=no \
     --xml ./devices/graphics/listen/@type=none \
@@ -574,6 +592,7 @@ setupVM()
 
   vm_dir="$vm_data_mountpoint/$vm_name"
   vm_image="$vm_dir/image.qcow2"
+  vm_image_home="$vm_dir/image-home.qcow2"
   vm_config_dir="$path_to_vm_configs/$vm_name"
   populateVMVariables "$vm_name" "$vm_config_dir/config"
 
@@ -661,28 +680,47 @@ setupVM()
       sendCommand 'rm /usr/local/bin/setup.sh'
     fi
 
-    if test "$cfg_expose_homedir" = 'true'; then
+    if test -n "$cfg_disksize_home"; then
+      partition_uuid='00000000-0000-0000-0000-001234567890'
+      sendCommand "echo 'UUID=$partition_uuid /home/user ext4 rw,relatime 0 2' >> /etc/fstab"
+
+      if ! test -e "$vm_image_home"; then
+        virt-xml "$vm_name" --add-device --update --no-define --disk \
+          "$vm_image_home,size=$cfg_disksize_home,format=qcow2" >&2
+        sendCommand "mkfs.ext4 -U '$partition_uuid' /dev/vdb"
+        sendCommand 'mount -t ext4 /dev/vdb /home/user'
+        setupUserHomedir '/home/user' "$cfg_color" "$cfg_kiosk"
+        sendCommand 'chown -R user:user /home/user'
+      fi
+    elif test "$cfg_expose_homedir" = 'true'; then
       sendCommand 'echo "homedir_mount_tag /home/user virtiofs rw,relatime 0 0" >> /etc/fstab'
     else
       setupUserHomedir '/home/user' "$cfg_color" "$cfg_kiosk"
       sendCommand 'chown -R user:user /home/user'
     fi
+
     printf 'rm /root/.ash_history && poweroff\n'
     waitFor '^Script done'
   } | runInPTY "virsh start --console '$vm_name'"
   virt-xml "$vm_name" --remove-device --network all
   virt-xml "$vm_name" --edit --metadata description="CUSTOM_AUTOSTART=false"
 
-  test "$cfg_expose_homedir" = 'true' || return 0
-  printf 'Attaching "%s/home/" to %s\n' "$vm_dir" "$vm_name"
-  virt-xml "$vm_name" --edit --memorybacking 'clearxml=yes,access.mode=shared,source.type=memfd'
-  virt-xml "$vm_name" --add-device --filesystem \
-    "type=mount,source.dir=$vm_dir/home,target.dir=homedir_mount_tag,driver.type=virtiofs"
+  if test -n "$cfg_disksize_home"; then
+    printf 'Attaching "%s" to %s\n' "$vm_image_home" "$vm_name"
+    virt-xml "$vm_name" --add-device --disk \
+      "$vm_image_home,target.dev=vdz,driver.discard=unmap"
+  elif test "$cfg_expose_homedir" = 'true'; then
+    printf 'Attaching "%s/home/" to %s\n' "$vm_dir" "$vm_name"
+    virt-xml "$vm_name" --edit --memorybacking 'clearxml=yes,access.mode=shared,source.type=memfd'
+    virt-xml "$vm_name" --add-device --filesystem \
+      "type=mount,source.dir=$vm_dir/home,target.dir=homedir_mount_tag,driver.type=virtiofs"
 
-  test ! -e "$vm_dir/home" || return 0
-  printf 'Initializing "%s/home/"...\n' "$vm_dir"
-  mkdir -p "$vm_dir/home"
-  setupExposedUserHomedir "$vm_dir/home" "$cfg_color" "$cfg_kiosk"
+    if test ! -e "$vm_dir/home"; then
+      printf 'Initializing "%s/home/"...\n' "$vm_dir"
+      mkdir "$vm_dir/home"
+      setupExposedUserHomedir "$vm_dir/home" "$cfg_color" "$cfg_kiosk"
+    fi
+  fi
 )
 
 test -z "$SETUP_VMS_SH_DONT_RUN" || return 0

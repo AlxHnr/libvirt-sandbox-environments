@@ -43,7 +43,8 @@ root_tty2
 |       cores      |    ✔️    |        | vCPUs, e.g. `cores=8`, `cores=ALL` or `cores=4*2` to define thread topology |
 |      memory      |    ✔️    |        | Memory to assign in MiB                                                     |
 |       color      |    ✔️    |   ✔️   | Wallpaper/background color for distinguishing VMs                           |
-|     disksize     |    ✔️    |   ✔️   | Size of the VMs qcow2 image                                                 |
+|     disksize     |    ✔️    |   ✔️   | Size of the VMs qcow2 image in GiB                                          |
+|  disksize\_home  |          |   ✔️   | Size of the qcow2 image of the VMs `/user/home/` in GiB                     |
 |  expose\_homedir |          |   ✔️   | Create `/vm-data/VM_NAME/home/` and mount it into the VM                    |
 |    root\_tty2    |          |   ✔️   | Spawn a terminal on TTY2 with root auto-login                               |
 |       kiosk      |          |   ✔️   | Start all programs maximized without window decoration                      |
@@ -137,7 +138,9 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 ## How to recreate a VM from scratch?
 
-Delete the VM trough virt-manager and rerun `./setup-vms.sh ./vm-configs/`.
+Delete the VM trough virt-manager and rerun `./setup-vms.sh ./vm-configs/`. To regenerate
+images/directories created trough `disksize_home` or `expose_homedir`, remove
+`/vm-data/VM_NAME/image-home.qcow2` or `/vm-data/VM_NAME/home` before running the script.
 
 ## I have set the clipboard flag but am unable to copy/paste
 

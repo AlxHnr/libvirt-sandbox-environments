@@ -202,6 +202,18 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
       assert grep -q 'invalid value in \./test-files/configs/invalid-disksize.txt: "disksize=invalid string"$'
   )
 
+  testName 'populateVMVariables - invalid disksize_home'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/invalid-disksize_home.txt 2>&1 |
+      assert grep -q 'invalid value in \./test-files/configs/invalid-disksize_home\.txt: "disksize_home=invalid string"$'
+  )
+
+  testName 'populateVMVariables - rejecting disksize_home with expose_homedir'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/reject-homedisk-with-homedir.txt 2>&1 |
+      assert grep -q 'use of incompatible flags in \./test-files/configs/reject-homedisk-with-homedir\.txt: disksize_home, expose_homedir$'
+  )
+
   testName 'populateVMVariables - invalid line'
   (
     populateVMVariables "$non_existing_vm" ./test-files/configs/invalid-line.txt 2>&1 |
@@ -263,6 +275,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'false'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
+    assert test -z "$cfg_disksize_home"
     assert test -z "$cfg_usb"
   )
 
@@ -283,6 +296,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'true'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
+    assert test -z "$cfg_disksize_home"
     assert test -z "$cfg_usb"
   )
 
@@ -304,6 +318,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
     assert test -z "$cfg_usb"
+    assert test -z "$cfg_disksize_home"
   )
 
   testName 'populateVMVariables - mixed values 3'
@@ -323,6 +338,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'false'
     assert test "$cfg_kiosk"          = 'true'
     assert test "$cfg_autostart"      = 'true'
+    assert test -z "$cfg_disksize_home"
     assert test -z "$cfg_usb"
   )
 
@@ -360,6 +376,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$vm_cores"          = 'NULL'
     assert test "$vm_memory"         = 'NULL'
     assert test "$vm_disksize"       = 'NULL'
+    assert test "$vm_disksize_home"  = 'NULL'
     assert test "$vm_expose_homedir" = 'NULL'
     assert test "$vm_clipboard"      = 'NULL'
     assert test "$vm_sound"          = 'NULL'
@@ -425,6 +442,7 @@ testName 'populateVMVariables - extract flags from existing vm 1'
   assert test "$vm_kiosk"          = '??????'
   assert test "$vm_autostart"      = 'false'
   assert test -z "$vm_usb"
+  assert test -z "$vm_disksize_home"
 )
 
 testName 'populateVMVariables - extract flags from existing vm 2'
@@ -771,6 +789,70 @@ testName 'reapplyConfigFlags - disksize'
     populateVMVariables "$vm_name" ./test-files/configs/change-flags-11.txt
     assert test "$vm_disksize" = '8'
     assert test "$cfg_disksize" = '4'
+  )
+)
+
+testName 'populateVMVariables - disksize_home'
+# shellcheck disable=SC2154
+(
+  image="$SETUP_VM_TMPDIR/image_home.qcow2"
+  sed -r "s,TMP_DISK_IMAGE_PLACEHOLDER,$image," \
+    ./test-files/sample-vm-definition-5.xml > "$SETUP_VM_TMPDIR/definition.xml"
+  dd if=/dev/zero count=0 bs=1 seek=6G of="$image"
+
+  trap 'virsh undefine f36e41c2-ca1a-3fd3-b1ea-efa182407374; rm "$image"' EXIT
+  virsh define "$SETUP_VM_TMPDIR/definition.xml"
+
+  (
+    populateVMVariables 'f36e41c2-ca1a-3fd3-b1ea-efa182407374' \
+      ./test-files/configs/disksize_home-1.txt
+    assert test "$vm_disksize"       = '??????'
+    assert test "$vm_disksize_home"  = '6'
+    assert test "$cfg_disksize_home" = '6'
+    assert test -z "$vm_cfg_deviations"
+  )
+
+  (
+    populateVMVariables 'f36e41c2-ca1a-3fd3-b1ea-efa182407374' \
+      ./test-files/configs/disksize_home-2.txt
+    assert test "$vm_disksize"       = '??????'
+    assert test "$vm_disksize_home"  = '6'
+    assert test "$cfg_disksize_home" = '7'
+    assert test "$vm_cfg_deviations" = ' disksize_home'
+  )
+
+  (
+    populateVMVariables 'f36e41c2-ca1a-3fd3-b1ea-efa182407374' \
+      ./test-files/configs/disksize_home-3.txt
+    assert test "$vm_disksize"       = '??????'
+    assert test "$vm_disksize_home"  = '6'
+    assert test -z "$cfg_disksize_home"
+    assert test "$vm_cfg_deviations" = ' disksize_home'
+  )
+)
+
+testName 'populateVMVariables - disksize_home: add to new config'
+# shellcheck disable=SC2154
+(
+  trap 'virsh undefine 3abd672c-b187-49ab-bb96-1646772547df' EXIT
+  virsh define ./test-files/sample-vm-definition-1.xml
+
+  (
+    populateVMVariables '3abd672c-b187-49ab-bb96-1646772547df' \
+      ./test-files/configs/config-for-deviation-test-1-no-changes.txt
+    assert test "$vm_disksize" = '??????'
+    assert test -z "$vm_disksize_home"
+    assert test -z "$cfg_disksize_home"
+    assert test -z "$vm_cfg_deviations"
+  )
+
+  (
+    populateVMVariables '3abd672c-b187-49ab-bb96-1646772547df' \
+      ./test-files/configs/disksize_home-1.txt
+    assert test "$vm_disksize" = '??????'
+    assert test -z "$vm_disksize_home"
+    assert test "$cfg_disksize_home" = '6'
+    assert test "$vm_cfg_deviations" = ' disksize_home'
   )
 )
 
