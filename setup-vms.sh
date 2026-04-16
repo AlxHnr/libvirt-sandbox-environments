@@ -154,6 +154,16 @@ getDisksize()
     grep -oE '\S+'
 )
 
+getExposedPorts()
+(
+  vm_name="$1"
+  protocol="$2"
+
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='$protocol']" |
+    grep -E '<range start=.[0-9]+. to=.[0-9]+./>' |
+    sed -r "s,.*start=.([0-9]+). to=.([0-9]+).+,$protocol \1 \2,"
+)
+
 # Parse the config file of the specified vm and populate variables in the callers environment.
 # Variables starting with `cfg_` reflect the state of the config file, while variables starting
 # with `vm_` represent the current vm state.
@@ -174,6 +184,7 @@ populateVMVariables()
   cfg_microphone='false'
   cfg_gpu='false'
   cfg_internet='false'
+  cfg_internet_ports=''
   cfg_root_tty2='false'
   cfg_kiosk='false'
   cfg_autostart='false'
@@ -198,6 +209,18 @@ populateVMVariables()
       sound+microphone) cfg_sound='true' cfg_microphone='true';;
       gpu) cfg_gpu='true';;
       internet) cfg_internet='true';;
+      internet+expose=*)
+        test -z "$cfg_internet_ports" || die "redefinition of exposed ports in $2: \"$line\""
+        value=$(parseLine "$line" \
+          '^internet\+expose=(tcp|udp):[0-9]+:[0-9]+(,(tcp|udp):[0-9]+:[0-9]+)*$' "$2")
+        cfg_internet='true'
+        cfg_internet_ports=$(printf '%s\n' "$value" | tr ',' '\n' | tr ':' ' ' | sort)
+        value=$(printf '%s\n' "$cfg_internet_ports" | grep -oE '^\S+\s+\S+' | uniq -c |
+          grep -vE '^\s*1 ' || true)
+        if printf '%s\n' "$value" | grep -q .; then
+          die "host port specified multiple times in $2: \"$line\""
+        fi
+        ;;
       root_tty2) cfg_root_tty2='true';;
       kiosk) cfg_kiosk='true';;
       autostart) cfg_autostart='true';;
@@ -245,6 +268,7 @@ populateVMVariables()
     vm_microphone='NULL'
     vm_gpu='NULL'
     vm_internet='NULL'
+    vm_internet_ports='NULL'
     vm_root_tty2='NULL'
     vm_kiosk='NULL'
     vm_autostart='NULL'
@@ -285,6 +309,7 @@ populateVMVariables()
       vm_gpu='true' || vm_gpu='false'
     printf '%s\n' "$xml" | grep -qE '<interface\>' &&
       vm_internet='true' || vm_internet='false'
+    vm_internet_ports=$({ getExposedPorts "$1" tcp; getExposedPorts "$1" udp; } | sort)
     printf '%s\n' "$xml" | grep -qE '<description>CUSTOM_AUTOSTART=true</description>' &&
       vm_autostart='true' || vm_autostart='false'
 
@@ -323,6 +348,8 @@ populateVMVariables()
   test "$vm_microphone" = "$cfg_microphone" || deviations="$deviations microphone"
   test "$vm_gpu" = "$cfg_gpu" || deviations="$deviations gpu"
   test "$vm_internet" = "$cfg_internet" || deviations="$deviations internet"
+  # Ports must come after internet
+  test "$vm_internet_ports" = "$cfg_internet_ports" || deviations="$deviations internet_ports"
   test "$vm_autostart" = "$cfg_autostart" || deviations="$deviations autostart"
   test "$vm_usb" = "$cfg_usb" || deviations="$deviations usb"
   test "$vm_cpupin" = "$cfg_cpupin" || deviations="$deviations cpupin"
@@ -405,6 +432,16 @@ reapplyConfigFlags()
             'type=user,model.type=virtio,backend.type=passt'
         else
           virt-xml "$vm_name" --remove-device --network all
+        fi
+        ;;
+      internet_ports)
+        if test "$cfg_internet" = 'true'; then
+          virt-xml "$vm_name" --edit --network 'xpath.delete=./portForward'
+          printf '%s\n' "$cfg_internet_ports" | grep . | nl -v 0 |
+            while read -r index protocol host_port guest_port; do
+              virt-xml "$vm_name" --edit --network \
+                "portForward$index.proto=$protocol,portForward$index.range.start=$host_port,portForward$index.range.to=$guest_port"
+            done
         fi
         ;;
       autostart)
@@ -667,7 +704,6 @@ setupVM()
     writeFile /etc/bash/custom-aliases.sh < ./files/custom-aliases.sh
     writeFile /usr/local/bin/update-system.sh < ./files/update-system.sh
     sendCommand 'chmod +x /usr/local/bin/update-system.sh'
-
 
     sendCommand 'mkdir -m 700 /var/lib/user/'
     sendCommand 'chown user:user /var/lib/user/'

@@ -244,6 +244,24 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
       assert grep -q 'redefinition of cpu affinity list in ./test-files/configs/invalid-cpupin-redefinition.txt: "cpupin=4:7"$'
   )
 
+  testName 'populateVMVariables - invalid port syntax'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/invalid-port-syntax.txt 2>&1 |
+      assert grep -q 'invalid value in \./test-files/configs/invalid-port-syntax\.txt: "internet+expose=tcp:123@"$'
+  )
+
+  testName 'populateVMVariables - redefinition of exposed ports'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/redefinition-of-exposed-port.txt 2>&1 |
+      assert grep -q 'redefinition of exposed ports in \./test-files/configs/redefinition-of-exposed-port\.txt: "internet+expose=tcp:8921:8921"$'
+  )
+
+  testName 'populateVMVariables - host port specified multiple times'
+  (
+    populateVMVariables "$non_existing_vm" ./test-files/configs/host-port-specified-multiple-times.txt 2>&1 |
+      assert grep -q 'host port specified multiple times in \./test-files/configs/host-port-specified-multiple-times\.txt: "internet+expose=tcp:123:456,tcp:999:80,tcp:123:22,tcp:1024:1024"$'
+  )
+
   testName 'populateVMVariables - reject invalid usb device lists'
   (
     populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-empty.txt 2>&1 |
@@ -276,6 +294,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
     assert test -z "$cfg_disksize_home"
+    assert test -z "$cfg_internet_ports"
     assert test -z "$cfg_usb"
   )
 
@@ -297,6 +316,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
     assert test -z "$cfg_disksize_home"
+    assert test -z "$cfg_internet_ports"
     assert test -z "$cfg_usb"
   )
 
@@ -317,8 +337,9 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_root_tty2"      = 'false'
     assert test "$cfg_kiosk"          = 'false'
     assert test "$cfg_autostart"      = 'false'
-    assert test -z "$cfg_usb"
     assert test -z "$cfg_disksize_home"
+    assert test -z "$cfg_internet_ports"
+    assert test -z "$cfg_usb"
   )
 
   testName 'populateVMVariables - mixed values 3'
@@ -339,6 +360,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_kiosk"          = 'true'
     assert test "$cfg_autostart"      = 'true'
     assert test -z "$cfg_disksize_home"
+    assert test -z "$cfg_internet_ports"
     assert test -z "$cfg_usb"
   )
 
@@ -383,6 +405,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$vm_microphone"     = 'NULL'
     assert test "$vm_gpu"            = 'NULL'
     assert test "$vm_internet"       = 'NULL'
+    assert test "$vm_internet_ports" = 'NULL'
     assert test "$vm_root_tty2"      = 'NULL'
     assert test "$vm_kiosk"          = 'NULL'
     assert test "$vm_autostart"      = 'NULL'
@@ -443,6 +466,7 @@ testName 'populateVMVariables - extract flags from existing vm 1'
   assert test "$vm_autostart"      = 'false'
   assert test -z "$vm_usb"
   assert test -z "$vm_disksize_home"
+  assert test -z "$vm_internet_ports"
 )
 
 testName 'populateVMVariables - extract flags from existing vm 2'
@@ -1023,6 +1047,127 @@ testName 'cpu topology'
     { ! printf '%s\n' "$xml" | grep -qE '<cache mode=.\<passthrough\>'; } ||
       assert false 'reapplyConfigFlags: xml contains cpu cache mode: passthrough'
   )
+)
+
+testName 'exposing network ports'
+# shellcheck disable=SC2154
+(
+  trap 'virsh undefine 3abd672c-b187-49ab-bb96-1646772547df' EXIT
+  virsh define ./test-files/sample-vm-definition-1.xml
+  vm_name="3abd672c-b187-49ab-bb96-1646772547df"
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-deviation-test-1-no-changes.txt
+    assert test "$cfg_internet" = 'true'
+    assert test "$vm_internet"  = 'true'
+    assert test -z "$cfg_internet_ports"
+    assert test -z "$vm_internet_ports"
+    assert test -z "$vm_cfg_deviations"
+  )
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-exposing-ports-1.txt
+    assert test "$cfg_internet" = 'true'
+    assert test "$vm_internet"  = 'true'
+    assert test -n "$cfg_internet_ports"
+    assert test -z "$vm_internet_ports"
+    assert test "$vm_cfg_deviations" = " internet_ports"
+  )
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-exposing-ports-1.txt
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-exposing-ports-1.txt
+    assert test "$cfg_internet" = 'true'
+    assert test "$vm_internet"  = 'true'
+    assert test -n "$cfg_internet_ports"
+    assert test -n "$vm_internet_ports"
+    assert test "$vm_internet_ports" = "$cfg_internet_ports"
+    assert test -z "$vm_cfg_deviations"
+  )
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.4949.\s+to=.1024.'
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.123.\s+to=.123.'
+
+  (
+    # Swap order of port definitions in config
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-exposing-ports-2.txt
+    assert test "$cfg_internet" = 'true'
+    assert test "$vm_internet"  = 'true'
+    assert test -n "$cfg_internet_ports"
+    assert test -n "$vm_internet_ports"
+    assert test "$vm_internet_ports" = "$cfg_internet_ports"
+    assert test -z "$vm_cfg_deviations"
+  )
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.4949.\s+to=.1024.'
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.123.\s+to=.123.'
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-exposing-ports-3.txt
+    assert test "$cfg_internet" = 'true'
+    assert test "$vm_internet"  = 'true'
+    assert test -n "$cfg_internet_ports"
+    assert test -n "$vm_internet_ports"
+    assert test "$vm_internet_ports" != "$cfg_internet_ports"
+    assert test "$vm_cfg_deviations" = ' internet_ports'
+  )
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-exposing-ports-3.txt
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.129.\s+to=.723.'
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    { ! grep -qE '\<start=.123.\s+to=.123.'; } ||
+      assert false "reapplyConfigFlags: exposed ports don't get removed properly"
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    { ! grep -qE '\<start=.4949.\s+to=.1024.'; } ||
+      assert false "reapplyConfigFlags: exposed ports don't get removed properly"
+
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-exposing-ports-4.txt
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.129.\s+to=.723.'
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='udp']" |
+    assert grep -qE '\<start=.129.\s+to=.921.'
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.9999.\s+to=.723.'
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-exposing-ports-5.txt
+    assert test "$cfg_internet" = 'false'
+    assert test "$vm_internet"  = 'true'
+    assert test -z "$cfg_internet_ports"
+    assert test -n "$vm_internet_ports"
+    assert test "$vm_cfg_deviations" = ' internet internet_ports'
+  )
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-exposing-ports-5.txt
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward" |
+    { ! grep -qE '\<start=.[0-9]+.\s+to=.[0-9]+.'; } ||
+      assert false "reapplyConfigFlags: exposed ports don't get removed properly"
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-exposing-ports-6.txt
+    assert test "$cfg_internet" = 'true'
+    assert test "$vm_internet"  = 'false'
+    assert test -n "$cfg_internet_ports"
+    assert test -z "$vm_internet_ports"
+    assert test "$vm_cfg_deviations" = ' internet internet_ports'
+  )
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-exposing-ports-6.txt
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward[@proto='tcp']" |
+    assert grep -qE '\<start=.129.\s+to=.723.'
+
+  (
+    populateVMVariables "$vm_name" ./test-files/configs/config-for-exposing-ports-7.txt
+    assert test "$cfg_internet" = 'true'
+    assert test "$vm_internet"  = 'true'
+    assert test -z "$cfg_internet_ports"
+    assert test -n "$vm_internet_ports"
+    assert test "$vm_cfg_deviations" = ' internet_ports'
+  )
+  reapplyConfigFlags "$vm_name" ./test-files/configs/config-for-exposing-ports-7.txt
+  virsh dumpxml "$vm_name" --xpath "./devices/interface/portForward" |
+    { ! grep -qE '\<start=.[0-9]+.\s+to=.[0-9]+.'; } ||
+      assert false "reapplyConfigFlags: exposed ports don't get removed properly"
 )
 
 testName 'makeVirtInstallCommand'

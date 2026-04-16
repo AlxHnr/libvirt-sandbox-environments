@@ -38,25 +38,26 @@ root_tty2
 
 ### Configuration flags
 
-|       Flag       | Required | Static | Description                                                                 |
-|:----------------:|:--------:|:------:|-----------------------------------------------------------------------------|
-|       cores      |    ✔️    |        | vCPUs, e.g. `cores=8`, `cores=ALL` or `cores=4*2` to define thread topology |
-|      memory      |    ✔️    |        | Memory to assign in MiB                                                     |
-|       color      |    ✔️    |   ✔️   | Wallpaper/background color for distinguishing VMs                           |
-|     disksize     |    ✔️    |   ✔️   | Size of the VMs qcow2 image in GiB                                          |
-|  disksize\_home  |          |   ✔️   | Size of the qcow2 image of the VMs `/home/user/` in GiB                     |
-|  expose\_homedir |          |   ✔️   | Create `/vm-data/VM_NAME/home/` and mount it into the VM                    |
-|    root\_tty2    |          |   ✔️   | Spawn a terminal on TTY2 with root auto-login                               |
-|       kiosk      |          |   ✔️   | Start all programs maximized without window decoration                      |
-|     autostart    |          |        | Start the VM at boot                                                        |
-|     clipboard    |          |        | Allow the VM to synchronize with the hosts clipboard                        |
-|       sound      |          |        | Allow the VM to output sound                                                |
-| sound+microphone |          |        | Allow the VM to output sound and access the microphone                      |
-|        gpu       |          |        | Allow the VM to utilize the hosts GPU via OpenGL                            |
-|     internet     |          |        | Allow the VM to access the internet                                         |
-|      usb=...     |          |        | Allow attaching USB devices to the VM, see below                            |
-|    cpupin=...    |          |        | Pin guest cores to host cores, e.g. `cpupin=0:8,1:9,2:10,3:11`              |
-|      topoext     |          |        | AMD CPU feature for passing through SMT topology, see FAQ below             |
+|         Flag        | Required | Static | Description                                                                 |
+|:-------------------:|:--------:|:------:|-----------------------------------------------------------------------------|
+|        cores        |    ✔️    |        | vCPUs, e.g. `cores=8`, `cores=ALL` or `cores=4*2` to define thread topology |
+|        memory       |    ✔️    |        | Memory to assign in MiB                                                     |
+|        color        |    ✔️    |   ✔️   | Wallpaper/background color for distinguishing VMs                           |
+|       disksize      |    ✔️    |   ✔️   | Size of the VMs qcow2 image in GiB                                          |
+|    disksize\_home   |          |   ✔️   | Size of the qcow2 image of the VMs `/home/user/` in GiB                     |
+|   expose\_homedir   |          |   ✔️   | Create `/vm-data/VM_NAME/home/` and mount it into the VM                    |
+|      root\_tty2     |          |   ✔️   | Spawn a terminal on TTY2 with root auto-login                               |
+|        kiosk        |          |   ✔️   | Start all programs maximized without window decoration                      |
+|      autostart      |          |        | Start the VM at boot                                                        |
+|      clipboard      |          |        | Allow the VM to synchronize with the hosts clipboard                        |
+|        sound        |          |        | Allow the VM to output sound                                                |
+|   sound+microphone  |          |        | Allow the VM to output sound and access the microphone                      |
+|         gpu         |          |        | Allow the VM to utilize the hosts GPU via OpenGL                            |
+|       internet      |          |        | Allow the VM to access the internet                                         |
+| internet+expose=... |          |        | Forward ports from host to guest, e.g. `tcp:80:8080,udp:12:12`              |
+|       usb=...       |          |        | Allow attaching USB devices to the VM, see below                            |
+|      cpupin=...     |          |        | Pin guest cores to host cores, e.g. `cpupin=0:8,1:9,2:10,3:11`              |
+|       topoext       |          |        | AMD CPU feature for passing through SMT topology, see FAQ below             |
 
 **Static** means the flag will only be applied during VM creation and will not be updated by
 subsequent runs of `./setup-vms.sh ./vm-configs/`.
@@ -144,9 +145,25 @@ images/directories created trough `disksize_home` or `expose_homedir`, remove
 
 ## I have set the clipboard flag but am unable to copy/paste
 
-The VM must be restarted after applying the clipboard flag via `./setup-vms.sh ./vm-configs/`. Make
-sure that virt-viewer has `Share clipboard` enabled in its preferences, which can be found at the
-top right corner of the VM window.
+The VM needs a full, complete shutdown before starting it again to ensure the
+flag is set. Make sure that virt-viewer has `Share clipboard` enabled in its
+preferences, which can be found at the top right corner of the VM window.
+
+## I have forwarded host ports to a VM, but it doesn't work
+
+The VM needs a full, complete shutdown before starting it again to ensure the
+ports are defined. If your config forwards port 80 on the host to the guests
+port 8080, e.g:
+
+```
+internet+expose=tcp:80:8080
+```
+
+you may still have to update your firewall rules. Example on Fedora:
+
+```sh
+sudo firewall-cmd --zone=public --add-port=80/tcp
+```
 
 ## How to increase/decrease font scaling?
 

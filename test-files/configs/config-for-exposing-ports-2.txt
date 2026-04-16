@@ -1,0 +1,7 @@
+color=abcdef
+cores=3
+memory=768
+disksize=8
+clipboard
+sound+microphone
+internet+expose=tcp:123:123,tcp:4949:1024

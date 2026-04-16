@@ -1,0 +1,6 @@
+color=bcbcbc
+cores=4
+memory=2048
+internet+expose=tcp:123:456,tcp:999:80,tcp:1024:1024
+disksize=8
+internet+expose=tcp:8921:8921
