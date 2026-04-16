@@ -626,9 +626,9 @@ setupVM()
   path_to_vm_configs="$2"
   alpine_version="$3"
   alpine_iso="$4"
-  vm_data_mountpoint="$5"
+  vm_data_path="$5"
 
-  vm_dir="$vm_data_mountpoint/$vm_name"
+  vm_dir="$vm_data_path/$vm_name"
   vm_image="$vm_dir/image.qcow2"
   vm_image_home="$vm_dir/image-home.qcow2"
   vm_config_dir="$path_to_vm_configs/$vm_name"
@@ -765,8 +765,8 @@ test -z "$SETUP_VMS_SH_DONT_RUN" || return 0
 cd "$(dirname "$0")"
 
 alpine_version="3.23.4"
-vm_data_mountpoint="/vm-data"
-alpine_iso="$vm_data_mountpoint/alpine-standard-$alpine_version-x86_64.iso"
+vm_data_path="/vm-data"
+alpine_iso="$vm_data_path/alpine-standard-$alpine_version-x86_64.iso"
 export LIBVIRT_DEFAULT_URI='qemu:///system'
 
 test "$#" -ge 1 || die 'no directory with vm configs specified'
@@ -774,16 +774,16 @@ test "$#" -lt 2 || die 'too many arguments'
 path_to_vm_configs="$1"
 test -d "$path_to_vm_configs" || die "not a valid directory: \"$path_to_vm_configs\""
 
-test "$(stat -c %U:%G "$vm_data_mountpoint")" = 'user:qemu' ||
-  die "invalid directory owners, expected user:qemu: \"$vm_data_mountpoint\""
-test "$(stat -c %a "$vm_data_mountpoint")" = '770' ||
-  die "invalid directory permissions, expected 770: \"$vm_data_mountpoint\""
+test "$(stat -c %U:%G "$vm_data_path")" = 'user:qemu' ||
+  die "invalid directory owners, expected user:qemu: \"$vm_data_path\""
+test "$(stat -c %a "$vm_data_path")" = '770' ||
+  die "invalid directory permissions, expected 770: \"$vm_data_path\""
 test -e /tmp/pipewire-0 ||
   die 'socket does not exist: "/tmp/pipewire-0", see ./host-configs/ for more informations'
 
 (cd "$path_to_vm_configs" && printf '%s\n' *) |
 while read -r vm_name; do
   vmExists "$vm_name" ||
-    setupVM "$vm_name" "$path_to_vm_configs" "$alpine_version" "$alpine_iso" "$vm_data_mountpoint"
+    setupVM "$vm_name" "$path_to_vm_configs" "$alpine_version" "$alpine_iso" "$vm_data_path"
   reapplyConfigFlags "$vm_name" "$path_to_vm_configs/$vm_name/config"
 done

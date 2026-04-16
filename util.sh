@@ -28,7 +28,7 @@ cmd="$2"
 vm_name="$3" # only mandatory for some commands
 
 cd "$path_to_vm_configs"
-vm_data_mountpoint="/vm-data"
+vm_data_path="/vm-data"
 case "$cmd" in
   listConfiguredVMs) printf '%s\n' *;;
   listRunnableCommands)
@@ -42,7 +42,7 @@ case "$cmd" in
     ;;
   getHomedir)
     assertIsValidVM "$vm_name"
-    printf '%s/%s/home\n' "$vm_data_mountpoint" "$vm_name"
+    printf '%s/%s/home\n' "$vm_data_path" "$vm_name"
     ;;
   *) die "invalid command provided: '$cmd'";;
 esac
