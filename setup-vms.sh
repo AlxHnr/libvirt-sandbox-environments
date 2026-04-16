@@ -401,7 +401,8 @@ reapplyConfigFlags()
         ;;
       internet)
         if test "$cfg_internet" = 'true'; then
-          virt-xml "$vm_name" --add-device --network 'network=default,model.type=virtio'
+          virt-xml "$vm_name" --add-device --network \
+            'type=user,model.type=virtio,backend.type=passt'
         else
           virt-xml "$vm_name" --remove-device --network all
         fi
