@@ -124,16 +124,16 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 # Known Bugs
 
-* Fractional scaling breaks VM window resizing. Set it to 100%, or a multiple it, and configure this
-  file instead: `./files/Xresources` -> `Xft.dpi`
+* Fractional scaling on the host breaks VM window resizing. Set it to 100% or a multiple of it.
+  Configure the dpi in this file instead: `./files/Xresources`
 * On systems which remap capslock (e.g. to escape), it will cause the key to be [pressed
   twice](https://gitlab.freedesktop.org/spice/spice-gtk/-/issues/143). A workaround can be found
   here: <https://gitlab.freedesktop.org/spice/spice/-/issues/66>
 * Virt-viewer does not forward the F10 key to the VM when the mouse is outside the VM window, even
   if the window is focused
 * Virt-viewer sometimes auto-attaches your external dock's audio device to VMs with webcam
-  permissions. That can mess up your configured audio setup. Detach the device from the VM via the
-  menu on the top left corner of the virt-viewer window
+  permissions. You have to detach the device from the VM via the menu on the top left corner of the
+  virt-viewer window
 
 # FAQ
 
