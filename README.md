@@ -122,15 +122,18 @@ This script will send update commands to running VMs and keeps waiting for futur
 ./update-service.sh ./vm-configs/
 ```
 
-# Known Bugs
+# Issues and limitations
 
+* Multi-touch mouse gestures are not forwarded to guest VMs
 * Fractional scaling on the host breaks VM window resizing. Set it to 100% or a multiple of it.
   Configure the dpi in this file instead: `./files/Xresources`
+* Virt-viewer does not forward the F10 key to the VM when the mouse is outside the VM window, even
+  if the window is focused
+* VMs without the `gpu` flag have a very small chance of freezing when e.g. dragging large windows
+  around. In that case they need a hard-reset
 * On systems which remap capslock (e.g. to escape), it will cause the key to be [pressed
   twice](https://gitlab.freedesktop.org/spice/spice-gtk/-/issues/143). A workaround can be found
   here: <https://gitlab.freedesktop.org/spice/spice/-/issues/66>
-* Virt-viewer does not forward the F10 key to the VM when the mouse is outside the VM window, even
-  if the window is focused
 * Virt-viewer sometimes auto-attaches your external dock's audio device to VMs with webcam
   permissions. You have to detach the device from the VM via the menu on the top left corner of the
   virt-viewer window
@@ -172,6 +175,32 @@ See `Xft.dpi` in `./files/Xresources`.
 ## How to use a different keyboard layout?
 
 See `./files/setup-alpine.cfg` and `./files/openbox-autostart.sh`.
+
+## How to enable Vulkan acceleration for VMs?
+
+As of right now, you can't. But I will add a Vulkan flag when these issues are resolved:
+
+* https://gitlab.com/libvirt/libvirt/-/work_items/638
+* Being able to use the Venus renderer without disabling the sandbox
+* Packages have to land in Fedora, including updated SELinux policies
+
+## Are guest VMs using wayland?
+
+Not yet, the following issues need to be resolved:
+
+* Find a lightweight window manager which works without a full desktop environment
+* Get xdg screencast portals working
+
+Potential candidates and their issues:
+
+* Mutter: has deep hidden dependencies to gnome-shell, which breaks IBUS/keyboard layout switching
+* KWin: no viable screencast portal, xdg-desktop-portal-kde only works within Plasma
+* Weston: doesn't support runtime resolution switching:
+  - https://gitlab.freedesktop.org/wayland/weston/-/issues/339
+  - https://gitlab.freedesktop.org/wayland/weston/-/issues/341
+* Wlroots-based compositors like Labwc suffer from flipped mouse cursors:
+  - https://gitlab.com/qemu-project/qemu/-/work_items/2315
+  - https://gitlab.freedesktop.org/wlroots/wlroots/-/work_items/3921
 
 ## How to run multiple webcams at once?
 
