@@ -686,6 +686,8 @@ setupVM()
       sendCommand '/usr/local/bin/setup.sh'
       sendCommand 'rm /usr/local/bin/setup.sh'
     fi
+    test ! -e "$vm_config_dir/setup-user.sh" ||
+      writeFileExec /usr/local/bin/setup-custom-user.sh < "$vm_config_dir/setup-user.sh"
 
     if test -n "$cfg_disksize_home"; then
       partition_uuid='00000000-0000-0000-0000-001234567890'

@@ -9,6 +9,7 @@ test ! -e "/var/lib/$USER/pip3-target" ||
 
 if test ! -e /var/lib/user/emptty-started-after-install; then
   setup-custom-homedir.sh
+  test ! -e /usr/local/bin/setup-custom-user.sh || setup-custom-user.sh
   touch /var/lib/user/emptty-started-after-install
 fi
 

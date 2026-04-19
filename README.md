@@ -95,6 +95,10 @@ setup. It runs after system configuration and package installation, but before t
 gets mounted. If this script exits with a non-zero exit status, `./setup-vms.sh` will also fail with
 the same exit status.
 
+The optional file `./vm-configs/YOUR_VM_NAME/setup-user.sh` will be run as a normal user inside the
+VMs `$HOME` directory. It runs only one single time on the very first boot, right before the desktop
+environment launches. If this script exits with a non-zero status, the desktop won't start.
+
 **Note**: These files will only be read during VM creation. Updating them has no effect on already
 existing VMs.
 
