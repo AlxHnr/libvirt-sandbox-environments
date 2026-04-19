@@ -180,6 +180,12 @@ See `Xft.dpi` in `./files/home/Xresources`.
 
 See `./files/setup-alpine.cfg` and `./files/bin/openbox-custom-autostart.sh`.
 
+## Do the scripts work with user session VMs?
+
+Not without code modifications. As a quick hack you can switch `LIBVIRT_DEFAULT_URI` to
+`qemu:///session` in the codebase. Note that attaching USB and PCI devices does not work in user
+session VMs.
+
 ## How to enable Vulkan acceleration for VMs?
 
 As of right now, you can't. But I will add a Vulkan flag when these issues are resolved:
