@@ -84,6 +84,14 @@ writeFile()
   sendCommand 'EOF_SETUP_SCRIPT'
 )
 
+writeFileExec()
+(
+  filename="$1"
+
+  writeFile "$filename"
+  sendCommand "chmod +x '$filename'"
+)
+
 vmExists()
 (
   vm_name="$1"
@@ -515,8 +523,7 @@ setupUserHomedir()
     cat ./files/openbox-autostart.sh
     printf '\n'
     printf 'xsetroot -solid "#%s"\n' "$config_color"
-  } | writeFile "$path_to_homedir/.config/openbox/autostart.sh"
-  sendCommand "chmod +x '$path_to_homedir/.config/openbox/autostart.sh'"
+  } | writeFileExec "$path_to_homedir/.config/openbox/autostart.sh"
   writeFile "$path_to_homedir/.config/openbox/environment" < ./files/openbox-environment.sh
   writeFile "$path_to_homedir/.Xresources" < ./files/Xresources
 
@@ -702,8 +709,10 @@ setupVM()
     } | writeFile /etc/inittab
 
     writeFile /etc/bash/custom-aliases.sh < ./files/custom-aliases.sh
-    writeFile /usr/local/bin/update-system.sh < ./files/update-system.sh
-    sendCommand 'chmod +x /usr/local/bin/update-system.sh'
+    for path in ./files/bin/*; do
+      script_name=$(basename "$path")
+      writeFileExec "/usr/local/bin/$script_name" < "$path"
+    done
 
     sendCommand 'mkdir -m 700 /var/lib/user/'
     sendCommand 'chown user:user /var/lib/user/'
@@ -711,8 +720,7 @@ setupVM()
     test ! -e "$vm_config_dir/pip" || setupPip "$vm_config_dir/pip"
 
     if test -e "$vm_config_dir/setup.sh"; then
-      writeFile /usr/local/bin/setup.sh < "$vm_config_dir/setup.sh"
-      sendCommand 'chmod +x /usr/local/bin/setup.sh'
+      writeFileExec /usr/local/bin/setup.sh < "$vm_config_dir/setup.sh"
       sendCommand '/usr/local/bin/setup.sh'
       sendCommand 'rm /usr/local/bin/setup.sh'
     fi
