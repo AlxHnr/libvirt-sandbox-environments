@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Openbox (Custom)
+Comment=Start custom guest VM Openbox session
+Exec=/usr/local/bin/openbox-custom-session.sh
+TryExec=/usr/local/bin/openbox-custom-session.sh
+Icon=openbox
+Type=Application

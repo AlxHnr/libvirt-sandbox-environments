@@ -126,7 +126,7 @@ This script will send update commands to running VMs and keeps waiting for futur
 
 * Multi-touch mouse gestures are not forwarded to guest VMs
 * Fractional scaling on the host breaks VM window resizing. Set it to 100% or a multiple of it.
-  Configure the dpi in this file instead: `./files/Xresources`
+  Configure the dpi in this file instead: `./files/home/Xresources`
 * Virt-viewer does not forward the F10 key to the VM when the mouse is outside the VM window, even
   if the window is focused
 * VMs without the `gpu` flag have a very small chance of freezing when e.g. dragging large windows
@@ -170,11 +170,11 @@ sudo firewall-cmd --zone=public --add-port=80/tcp
 
 ## How to increase/decrease font scaling?
 
-See `Xft.dpi` in `./files/Xresources`.
+See `Xft.dpi` in `./files/home/Xresources`.
 
 ## How to use a different keyboard layout?
 
-See `./files/setup-alpine.cfg` and `./files/openbox-autostart.sh`.
+See `./files/setup-alpine.cfg` and `./files/bin/openbox-custom-autostart.sh`.
 
 ## How to enable Vulkan acceleration for VMs?
 

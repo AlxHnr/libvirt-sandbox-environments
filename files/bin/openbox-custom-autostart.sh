@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# setxkbmap YOUR_LAYOUT_HERE
 spice-vdagent
 tint2 &
 
@@ -16,3 +15,4 @@ test ! -e /usr/libexec/pipewire-launcher || /usr/libexec/pipewire-launcher
   done
 ) &
 xargs -I {} < /tmp/host-serial-output sh -c 'exec {} >/dev/null 2>&1 &' &
+# setxkbmap YOUR_LAYOUT_HERE

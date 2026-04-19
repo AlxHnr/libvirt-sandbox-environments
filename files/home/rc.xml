@@ -729,13 +729,15 @@
 
   # end of the example
 -->
-<application role="VM_KIOSK_APP">
-  <decor>no</decor>
-  <maximized>true</maximized>
-</application>
-
-<!--
-The actual ending gets appended dynamically by setup-vms.sh
+  <application role="VM_KIOSK_APP">
+    <decor>no</decor>
+    <maximized>true</maximized>
+  </application>
+  <!-- KIOSK_MODE
+  <application type="normal">
+    <decor>no</decor>
+    <maximized>true</maximized>
+  </application>
+  KIOSK_MODE -->
 </applications>
 </openbox_config>
--->

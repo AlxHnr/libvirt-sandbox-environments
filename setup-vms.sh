@@ -512,55 +512,6 @@ ensureIsoExists()
   gpg --homedir ./gnupg/ --no-permission-warning --verify "$path_to_iso_signature" "$path_to_iso"
 )
 
-setupUserHomedir()
-(
-  path_to_homedir="$1"
-  config_color="$2"
-  config_kiosk="$3"
-
-  sendCommand "mkdir -p '$path_to_homedir/.config/openbox/'"
-  {
-    cat ./files/openbox-autostart.sh
-    printf '\n'
-    printf 'xsetroot -solid "#%s"\n' "$config_color"
-  } | writeFileExec "$path_to_homedir/.config/openbox/autostart.sh"
-  writeFile "$path_to_homedir/.config/openbox/environment" < ./files/openbox-environment.sh
-  writeFile "$path_to_homedir/.Xresources" < ./files/Xresources
-
-  {
-    cat ./files/openbox-rc.xml
-
-    test "$config_kiosk" != true || cat <<'EOF'
-
-  <application type="normal">
-    <decor>no</decor>
-    <maximized>true</maximized>
-  </application>
-EOF
-
-    cat <<'EOF'
-
-</applications>
-</openbox_config>
-EOF
-  } | writeFile "$path_to_homedir/.config/openbox/rc.xml"
-
-  sendCommand "mkdir -p '$path_to_homedir/.config/tint2/'"
-  writeFile "$path_to_homedir/.config/tint2/tint2rc" < ./files/tint2rc
-)
-
-setupExposedUserHomedir()
-(
-  homedir="$1"
-  config_color="$2"
-  config_kiosk="$3"
-
-  {
-    printf 'export HISTFILE=/dev/null PS1="localhost:~$ "\n'
-    setupUserHomedir "$homedir" "$config_color" "$config_kiosk"
-  } | runInPTYRaw 'sh'
-)
-
 makeVirtInstallCommand()
 (
   vm_name="$1"
@@ -709,10 +660,21 @@ setupVM()
     } | writeFile /etc/inittab
 
     writeFile /etc/bash/custom-aliases.sh < ./files/custom-aliases.sh
+    writeFile /usr/share/xsessions/openbox-custom.desktop < ./files/openbox-custom.desktop
+
     for path in ./files/bin/*; do
       script_name=$(basename "$path")
       writeFileExec "/usr/local/bin/$script_name" < "$path"
     done
+    sendCommand "echo \"xsetroot -solid '#$cfg_color'\" >> /usr/local/bin/openbox-custom-autostart.sh"
+
+    sendCommand 'mkdir /usr/local/share/guest-home-files/'
+    for path in ./files/home/*; do
+      file_name=$(basename "$path")
+      writeFile "/usr/local/share/guest-home-files/$file_name" < "$path"
+    done
+    test "$cfg_kiosk" != 'true' ||
+      sendCommand 'sed -ri "/KIOSK_MODE/d" /usr/local/share/guest-home-files/rc.xml'
 
     sendCommand 'mkdir -m 700 /var/lib/user/'
     sendCommand 'chown user:user /var/lib/user/'
@@ -734,13 +696,11 @@ setupVM()
           "$vm_image_home,size=$cfg_disksize_home,format=qcow2" >&2
         sendCommand "mkfs.ext4 -U '$partition_uuid' /dev/vdb"
         sendCommand 'mount -t ext4 /dev/vdb /home/user'
-        setupUserHomedir '/home/user' "$cfg_color" "$cfg_kiosk"
         sendCommand 'chown -R user:user /home/user'
       fi
     elif test "$cfg_expose_homedir" = 'true'; then
       sendCommand 'echo "homedir_mount_tag /home/user virtiofs rw,relatime 0 0" >> /etc/fstab'
     else
-      setupUserHomedir '/home/user' "$cfg_color" "$cfg_kiosk"
       sendCommand 'chown -R user:user /home/user'
     fi
 
@@ -759,12 +719,7 @@ setupVM()
     virt-xml "$vm_name" --edit --memorybacking 'clearxml=yes,access.mode=shared,source.type=memfd'
     virt-xml "$vm_name" --add-device --filesystem \
       "type=mount,source.dir=$vm_dir/home,target.dir=homedir_mount_tag,driver.type=virtiofs"
-
-    if test ! -e "$vm_dir/home"; then
-      printf 'Initializing "%s/home/"...\n' "$vm_dir"
-      mkdir "$vm_dir/home"
-      setupExposedUserHomedir "$vm_dir/home" "$cfg_color" "$cfg_kiosk"
-    fi
+    mkdir -p "$vm_dir/home"
   fi
 )
 
