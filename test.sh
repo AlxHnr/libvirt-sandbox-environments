@@ -262,20 +262,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
       assert grep -q 'host port specified multiple times in \./test-files/configs/host-port-specified-multiple-times\.txt: "internet+expose=tcp:123:456,tcp:999:80,tcp:123:22,tcp:1024:1024"$'
   )
 
-  testName 'populateVMVariables - reject invalid usb device lists'
-  (
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-empty.txt 2>&1 |
-      assert grep -qF 'invalid value in ./test-files/configs/usb-device-list-empty.txt: "usb="'
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-trailing-colon-1.txt 2>&1 |
-      assert grep -qF 'invalid value in ./test-files/configs/usb-device-list-trailing-colon-1.txt: "usb=,"'
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-trailing-colon-2.txt 2>&1 |
-      assert grep -qF 'invalid value in ./test-files/configs/usb-device-list-trailing-colon-2.txt: "usb=webcam,"'
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-unknown-device.txt 2>&1 |
-      assert grep -qF 'unknown usb device in config: "InvalidString"'
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-redefinition.txt 2>&1 |
-      assert grep -qE 'redefinition of usb device list in .* "usb=printer"$'
-  )
-
   testName 'populateVMVariables - parse minimal viable config'
   # shellcheck disable=SC2154
   (
@@ -295,7 +281,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_autostart"      = 'false'
     assert test -z "$cfg_disksize_home"
     assert test -z "$cfg_internet_ports"
-    assert test -z "$cfg_usb"
   )
 
   testName 'populateVMVariables - mixed values 1'
@@ -317,7 +302,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_autostart"      = 'false'
     assert test -z "$cfg_disksize_home"
     assert test -z "$cfg_internet_ports"
-    assert test -z "$cfg_usb"
   )
 
   testName 'populateVMVariables - mixed values 2'
@@ -339,7 +323,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_autostart"      = 'false'
     assert test -z "$cfg_disksize_home"
     assert test -z "$cfg_internet_ports"
-    assert test -z "$cfg_usb"
   )
 
   testName 'populateVMVariables - mixed values 3'
@@ -361,25 +344,6 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$cfg_autostart"      = 'true'
     assert test -z "$cfg_disksize_home"
     assert test -z "$cfg_internet_ports"
-    assert test -z "$cfg_usb"
-  )
-
-  testName 'populateVMVariables - usb device list parsing 1'
-  (
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-1.txt
-    assert test "$cfg_usb" = ' android printer'
-  )
-
-  testName 'populateVMVariables - usb device list parsing 2'
-  (
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-2.txt
-    assert test "$cfg_usb" = ' android'
-  )
-
-  testName 'populateVMVariables - usb device list sorting and deduplication'
-  (
-    populateVMVariables "$non_existing_vm" ./test-files/configs/usb-device-list-unordered-duplicates.txt
-    assert test "$cfg_usb" = ' android printer webcam'
   )
 
   testName 'populateVMVariables - replace ALL with max core count'
@@ -409,38 +373,7 @@ testName 'ensureIsoExists - gpg signature check: tampered image'
     assert test "$vm_root_tty2"      = 'NULL'
     assert test "$vm_kiosk"          = 'NULL'
     assert test "$vm_autostart"      = 'NULL'
-    assert test "$vm_usb"            = 'NULL'
   )
-)
-
-testName 'populateVMVariables - reject unknown redirfilter usbdev class codes'
-(
-  trap 'virsh undefine 5e96ae71-25f5-4329-9aa9-6673fee3a15e' EXIT
-  virsh define ./test-files/sample-vm-definition-usb-class-codes-unknown-redirfilter.xml
-
-  populateVMVariables '5e96ae71-25f5-4329-9aa9-6673fee3a15e' \
-    ./test-files/configs/minimal-viable-config.txt 2>&1 |
-    assert grep -qE 'unknown redirfilter usbdev class code: "0x1C"'
-)
-
-testName 'populateVMVariables - extract usb device types'
-(
-  trap 'virsh undefine cb2ce12a-a52a-4414-882d-5c849b3719c6' EXIT
-  virsh define ./test-files/sample-vm-definition-usb-class-codes.xml
-
-  populateVMVariables 'cb2ce12a-a52a-4414-882d-5c849b3719c6' \
-    ./test-files/configs/minimal-viable-config.txt
-  assert test "$vm_usb" = ' printer webcam'
-)
-
-testName 'populateVMVariables - extract usb device types: sorting and deduplication'
-(
-  trap 'virsh undefine 89ecca4d-c9fb-4292-b2c4-7ccf988b308a' EXIT
-  virsh define ./test-files/sample-vm-definition-usb-class-codes-unordered-duplicates.xml
-
-  populateVMVariables '89ecca4d-c9fb-4292-b2c4-7ccf988b308a' \
-    ./test-files/configs/minimal-viable-config.txt
-  assert test "$vm_usb" = ' android printer webcam'
 )
 
 testName 'populateVMVariables - extract flags from existing vm 1'
@@ -464,7 +397,6 @@ testName 'populateVMVariables - extract flags from existing vm 1'
   assert test "$vm_root_tty2"      = '??????'
   assert test "$vm_kiosk"          = '??????'
   assert test "$vm_autostart"      = 'false'
-  assert test -z "$vm_usb"
   assert test -z "$vm_disksize_home"
   assert test -z "$vm_internet_ports"
 )
@@ -486,7 +418,6 @@ testName 'populateVMVariables - extract flags from existing vm 2'
   assert test "$vm_gpu"            = 'true'
   assert test "$vm_internet"       = 'false'
   assert test "$vm_autostart"      = 'false'
-  assert test -z "$vm_usb"
 )
 
 testName 'populateVMVariables - extract flags from existing vm 3'
@@ -506,7 +437,6 @@ testName 'populateVMVariables - extract flags from existing vm 3'
   assert test "$vm_gpu"            = 'false'
   assert test "$vm_internet"       = 'true'
   assert test "$vm_autostart"      = 'false'
-  assert test -z "$vm_usb"
 )
 
 testName 'populateVMVariables - extract disksize from existing vm'
@@ -532,7 +462,6 @@ testName 'populateVMVariables - extract disksize from existing vm'
   assert test "$vm_gpu"            = 'false'
   assert test "$vm_internet"       = 'true'
   assert test "$vm_autostart"      = 'false'
-  assert test -z "$vm_usb"
 )
 
 testName 'populateVMVariables - detect deviations between config file and vm state'
@@ -568,7 +497,7 @@ testName 'populateVMVariables - detect deviations between config file and vm sta
   (
     populateVMVariables '3abd672c-b187-49ab-bb96-1646772547df' \
       ./test-files/configs/config-for-deviation-test-5.txt
-    assert test "$vm_cfg_deviations" = ' gpu usb'
+    assert test "$vm_cfg_deviations" = ' gpu'
   )
 )
 
@@ -614,7 +543,6 @@ testName 'reapplyConfigFlags'
     assert test "$vm_gpu"            = 'false'
     assert test "$vm_internet"       = 'true'
     assert test "$vm_autostart"      = 'false'
-    assert test -z "$vm_usb"
   )
 
   # Nothing should change
@@ -630,7 +558,6 @@ testName 'reapplyConfigFlags'
     assert test "$vm_gpu"            = 'false'
     assert test "$vm_internet"       = 'true'
     assert test "$vm_autostart"      = 'false'
-    assert test -z "$vm_usb"
   )
 
   reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-1.txt
@@ -645,7 +572,6 @@ testName 'reapplyConfigFlags'
     assert test "$vm_gpu"            = 'false'
     assert test "$vm_internet"       = 'true'
     assert test "$vm_autostart"      = 'false'
-    assert test -z "$vm_usb"
   )
 
   reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-2.txt
@@ -660,7 +586,6 @@ testName 'reapplyConfigFlags'
     assert test "$vm_gpu"            = 'true'
     assert test "$vm_internet"       = 'false'
     assert test "$vm_autostart"      = 'false'
-    assert test -z "$vm_usb"
   )
 
   reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-3.txt
@@ -675,7 +600,6 @@ testName 'reapplyConfigFlags'
     assert test "$vm_gpu"            = 'false'
     assert test "$vm_internet"       = 'true'
     assert test "$vm_autostart"      = 'false'
-    assert test -z "$vm_usb"
   )
 
   reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-4.txt
@@ -690,7 +614,6 @@ testName 'reapplyConfigFlags'
     assert test "$vm_gpu"            = 'false'
     assert test "$vm_internet"       = 'true'
     assert test "$vm_autostart"      = 'false'
-    assert test -z "$vm_usb"
   )
 
   # Test switching from no sound to sound+microphone
@@ -725,57 +648,6 @@ testName 'reapplyConfigFlags'
   (
     populateVMVariables "$vm_name" ./test-files/configs/change-flags-2.txt
     assert test "$vm_autostart" = 'false'
-  )
-
-  # Switching usb devices
-  reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-7.txt
-  (
-    populateVMVariables "$vm_name" ./test-files/configs/change-flags-7.txt
-    assert test "$vm_usb" = ' webcam'
-    xml=$(virsh dumpxml --inactive "$vm_name")
-    printf '%s\n' "$xml" | assert grep -qF "<usbdev allow='no'/>"
-    { ! printf '%s\n' "$xml" | grep -qE '<usbdev class=.\<0xFF\>'; } ||
-      assert false 'reapplyConfigFlags: xml contains 0xFF usb class'
-  )
-  reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-8.txt
-  (
-    populateVMVariables "$vm_name" ./test-files/configs/change-flags-8.txt
-    assert test "$vm_usb" = ' android'
-    virsh dumpxml --inactive "$vm_name" | assert grep -qF "<usbdev allow='no'/>"
-  )
-  reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-9.txt
-  (
-    populateVMVariables "$vm_name" ./test-files/configs/change-flags-9.txt
-    assert test "$vm_usb" = ' android printer'
-    virsh dumpxml --inactive "$vm_name" | assert grep -qF "<usbdev allow='no'/>"
-  )
-  reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-10-usb-duplicates.txt
-  (
-    # Both `android` and `printer` try to insert class="0xFF"
-    populateVMVariables "$vm_name" ./test-files/configs/change-flags-10-usb-duplicates.txt
-    assert test "$vm_usb" = ' android printer'
-
-    xml=$(virsh dumpxml --inactive "$vm_name")
-    printf '%s\n' "$xml" | assert grep -qF "<usbdev allow='no'/>"
-    printf '%s\n' "$xml" | grep -cE '<usbdev class=.\<0x06\>' | grep -qxF '1' ||
-      assert false 'reapplyConfigFlags: xml contains multiple 0x06 usb classes'
-    printf '%s\n' "$xml" | grep -cE '<usbdev class=.\<0x07\>' | grep -qxF '1' ||
-      assert false 'reapplyConfigFlags: xml contains multiple 0x07 usb classes'
-    printf '%s\n' "$xml" | grep -cE '<usbdev class=.\<0xFF\>' | grep -qxF '1' ||
-      assert false 'reapplyConfigFlags: xml contains multiple 0xFF usb classes'
-  )
-  reapplyConfigFlags "$vm_name" ./test-files/configs/change-flags-2.txt
-  (
-    populateVMVariables "$vm_name" ./test-files/configs/change-flags-2.txt
-    assert test -z "$vm_usb"
-
-    xml=$(virsh dumpxml --inactive "$vm_name")
-    { ! printf '%s\n' "$xml" | grep -qF '<redirdev'; } ||
-      assert false 'makeVirtInstallCommand: xml contains redirector device'
-    { ! printf '%s\n' "$xml" | grep -qF '<redirfilter'; } ||
-      assert false 'makeVirtInstallCommand: xml contains redirfilter'
-    { ! printf '%s\n' "$xml" | grep -qF '<usbdev'; } ||
-      assert false 'makeVirtInstallCommand: xml contains usb filter rule'
   )
 )
 

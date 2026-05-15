@@ -55,14 +55,11 @@ root_tty2
 |         gpu         |          |        | Allow the VM to utilize the hosts GPU via OpenGL                            |
 |       internet      |          |        | Allow the VM to access the internet                                         |
 | internet+expose=... |          |        | Forward ports from host to guest, e.g. `tcp:80:8080,udp:12:12`              |
-|       usb=...       |          |        | Allow attaching USB devices to the VM, see below                            |
 |      cpupin=...     |          |        | Pin guest cores to host cores, e.g. `cpupin=0:8,1:9,2:10,3:11`              |
 |       topoext       |          |        | AMD CPU feature for passing through SMT topology, see FAQ below             |
 
 **Static** means the flag will only be applied during VM creation and will not be updated by
 subsequent runs of `./setup-vms.sh ./vm-configs/`.
-
-The `usb=...` flag accepts `android`, `printer`, `HID` and `webcam`. E.g. `usb=printer,webcam`.
 
 ### Install packages during VM creation
 
@@ -212,24 +209,43 @@ Potential candidates and their issues:
   - https://gitlab.com/qemu-project/qemu/-/work_items/2315
   - https://gitlab.freedesktop.org/wlroots/wlroots/-/work_items/3921
 
-## How to run multiple webcams at once?
+## How to attach devices like webcams or microphones to a VM?
 
-Find the PCI host devices to which your webcams are attached via `lsusb.py -ciu`. Add those PCI
-devices to your VM.
+Run `lsusb.py -ciu` from usbutils to find the PCI device to which your webcam is attached. If this
+PCI device also hosts other USB devices which you don't want to expose to your VM, try reconnecting
+your webcam to a different USB port.
 
-### Why not just use a qemu USB 3.0 controller?
+To auto-attach the PCI device every time your VM starts, use virt-manager's GUI.
 
-They cause webcam glitches due to some bug in qemu/kvm.
+To attach the device temporarily to a running VM until it shuts down, create the following XML file.
+Example for PCI device `0000:c1:00.3`:
 
-## How to do audio work if VMs have massively inconsistent audio latencies?
+```xml
+<hostdev mode="subsystem" type="pci" managed="yes">
+  <source>
+    <address domain="0x0000" bus="0xc1" slot="0x00" function="0x3"/>
+  </source>
+</hostdev>
+```
 
-Remove `sound` and `sound+microphone` from the VM configuration and rerun `./setup-vms.sh
-./vm-configs/`. Use `lsusb.py -ciu` to find the PCI device to which your sound hardware is attached.
-Use virt-manager to manually assign this PCI device to your VM. When the VM starts, use alsamixer to
-adjust the volume.
+Then run `virsh attach-device VM_NAME --live ./YOUR_XML.xml`. Alpine guests support PCI hotplugging
+and should recognize your hardware.
 
-**Note**: You must assign whole PCI devices instead of just a single USB device to fix the latency,
-according to my own testing.
+### Why not use qemu/libvirt's builtin mechanism for attaching USB devices?
+
+They suffer from performance issues, which cause webcams to glitch and audio hardware to underrun or
+have weird delays. Hacks like switching to USB 2.0 (ehci), tweaking iothreads and pinning cores make
+it less worse, but never fix it completely. Some modern webcams won't even start in USB 2.0 mode.
+
+## Audio latencies fluctuate heavily, how to fix them?
+
+* Remove `sound` and `sound+microphone` from the VM configuration
+* Rerun `./setup-vms.sh`
+* Attach the PCI device hosting your sound hardware to the VM, as described in the previous section
+* When the VM starts, use alsamixer to adjust the volume
+
+**Note**: These steps are only necessary for low-latency audio work and are overkill for video calls
+and voice-overs.
 
 ## Rootless podman does not work when `expose_homedir` is set
 

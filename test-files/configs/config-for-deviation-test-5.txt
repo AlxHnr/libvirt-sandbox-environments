@@ -6,4 +6,3 @@ clipboard
 sound+microphone
 internet
 gpu
-usb=printer

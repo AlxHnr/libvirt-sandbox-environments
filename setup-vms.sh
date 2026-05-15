@@ -127,32 +127,6 @@ assertConfigFlagSet()
   test -n "$value" || die "flag missing in $config_path: \"$flag\""
 )
 
-getUsbClassCodes()
-(
-  device_type="$1"
-
-  case "$device_type" in
-    android) printf '0x06\n0xFF\n';; # Devices don't work yet.
-    printer) printf '0x07\n0xFF\n';;
-    webcam) printf '0x0E\n0x01\n';; # Most webcams contain a mandatory microphone.
-    HID) printf '0x03\n';; # Human interface devices e.g. drawing tablets.
-    *) die "unknown usb device in config: \"$device_type\"";;
-  esac
-)
-getUsbDeviceType()
-(
-  class_code="$1"
-
-  case "$class_code" in
-    0x06) printf 'android\n';;
-    0x07) printf 'printer\n';;
-    0x0E) printf 'webcam\n';;
-    0x03) printf 'HID\n';;
-    0xFF|0x01);; # Supplemental class codes used together with others.
-    *) die "unknown redirfilter usbdev class code: \"$class_code\"";;
-  esac
-)
-
 getDisksize()
 (
   vm_name="$1"
@@ -196,7 +170,6 @@ populateVMVariables()
   cfg_root_tty2='false'
   cfg_kiosk='false'
   cfg_autostart='false'
-  cfg_usb=''
   cfg_cpupin=''
   cfg_topoext='false'
 
@@ -232,14 +205,6 @@ populateVMVariables()
       root_tty2) cfg_root_tty2='true';;
       kiosk) cfg_kiosk='true';;
       autostart) cfg_autostart='true';;
-      usb=*)
-        test -z "$cfg_usb" || die "redefinition of usb device list in $2: \"$line\""
-        value=$(parseLine "$line" '^usb=(,?[[:alnum:]]+)+$' "$2")
-        devices=$(printf '%s\n' "$value" | tr ',' '\n' | sort -u)
-        for device in $devices; do
-          getUsbClassCodes "$device" >/dev/null
-          cfg_usb="$cfg_usb $device"
-        done;;
       cpupin=*)
         test -z "$cfg_cpupin" || die "redefinition of cpu affinity list in $2: \"$line\""
         value=$(parseLine "$line" '^cpupin=[0-9]+:[0-9]+(,[0-9]+:[0-9]+)*$' "$2")
@@ -280,7 +245,6 @@ populateVMVariables()
     vm_root_tty2='NULL'
     vm_kiosk='NULL'
     vm_autostart='NULL'
-    vm_usb='NULL'
     vm_cpupin='NULL'
     vm_topoext='NULL'
   else
@@ -321,17 +285,6 @@ populateVMVariables()
     printf '%s\n' "$xml" | grep -qE '<description>CUSTOM_AUTOSTART=true</description>' &&
       vm_autostart='true' || vm_autostart='false'
 
-    usb_classes=$(printf '%s\n' "$xml" | grep -E '<usbdev\>.*\<allow=.\<yes\>' |
-      sed -r 's,^.*class=.(0x..).*$,\1,')
-    device_types=''
-    for class in $usb_classes; do
-      device_types="$device_types $(getUsbDeviceType "$class")"
-    done
-    device_types=$(for device in $device_types; do printf '%s\n' "$device"; done | sort -u)
-    for device_type in $device_types; do
-      vm_usb="$vm_usb $device_type"
-    done
-
     vm_cpupin=$(virsh vcpupin "$1" --config |
       sed -r 's/^\s*(\S+)\s+(\S+)$/\1 \2/' | grep '^[0-9]' | grep -v ' 0-' | sort -n)
 
@@ -359,7 +312,6 @@ populateVMVariables()
   # Ports must come after internet
   test "$vm_internet_ports" = "$cfg_internet_ports" || deviations="$deviations internet_ports"
   test "$vm_autostart" = "$cfg_autostart" || deviations="$deviations autostart"
-  test "$vm_usb" = "$cfg_usb" || deviations="$deviations usb"
   test "$vm_cpupin" = "$cfg_cpupin" || deviations="$deviations cpupin"
   test "$vm_topoext" = "$cfg_topoext" || deviations="$deviations topoext"
   vm_cfg_deviations="$deviations"
@@ -457,23 +409,6 @@ reapplyConfigFlags()
           virt-xml "$vm_name" --edit --metadata description="CUSTOM_AUTOSTART=true"
         else
           virt-xml "$vm_name" --edit --metadata description="CUSTOM_AUTOSTART=false"
-        fi
-        ;;
-      usb)
-        # There is no high-level virt-xml equivalent at the time of writing.
-        EDITOR='sed -ri "/<\/?(redirfilter|usbdev)\>/d"' virsh edit "$vm_name"
-        virt-xml "$vm_name" --remove-device --redirdev all
-
-        if test -n "$cfg_usb"; then
-          for _ in $(seq 4); do
-            virt-xml "$vm_name" --add-device --redirdev 'bus=usb,type=spicevmc'
-          done
-          class_codes=$(for device in $cfg_usb; do getUsbClassCodes "$device"; done | sort -u)
-          allow_rules=$(for class_code in $class_codes; do
-              printf '<usbdev class="%s" allow="yes"/>' "$class_code"
-            done)
-          redirfilter="<redirfilter>$allow_rules<usbdev allow=\"no\"/></redirfilter>"
-          EDITOR="sed -ri 's|(</devices>)|$redirfilter\1|'" virsh edit "$vm_name"
         fi
         ;;
       cpupin)
@@ -616,17 +551,6 @@ setupVM()
   } | runInPTY "$(makeVirtInstallCommand "$vm_name" "$vm_image" "$cfg_disksize") \
     --cdrom '$alpine_iso'"
   virt-xml "$vm_name" --remove-device --disk device=cdrom
-
-  # Use USB 2.0 controllers to prevent webcam flickering.
-  usb_address_flags='address.type=pci,address.bus=0x00,address.slot=0x1d'
-  virt-xml "$vm_name" --edit type=usb --controller \
-    "clearxml=yes,type=usb,model=ich9-ehci1,$usb_address_flags,address.function=0x7"
-  virt-xml "$vm_name" --add-device --controller \
-    "type=usb,model=ich9-uhci1,master.startport=0,$usb_address_flags,address.function=0x0"
-  virt-xml "$vm_name" --add-device --controller \
-    "type=usb,model=ich9-uhci2,master.startport=2,$usb_address_flags,address.function=0x1"
-  virt-xml "$vm_name" --add-device --controller \
-    "type=usb,model=ich9-uhci3,master.startport=4,$usb_address_flags,address.function=0x2"
 
   {
     waitAndLogin
