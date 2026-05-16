@@ -1,12 +1,14 @@
-This repository contains scripts for bootstrapping and maintaining Alpine Linux environments for
-sandboxing.
+Scripts in this repository create and configure VMs from minimal config files. These configs can
+contain a list of packages to install into the VM. They also define VM permissions like microphone
+access, host clipboard access and which ports should be exposed to the internet.
 
-# Why?
+This allows you to define separate and independent environments for work, banking, surfing and
+development. The concept is heavily borrowed from [Qubes OS](https://www.qubes-os.org/), which I've
+used for over half a decade. I've stopped using Qubes because it is way too heavy and overkill for
+my threat model. It also lacks basic things like GPU acceleration. With these scripts here I can
+just add the `gpu` flag to a VMs config and reapply it through a script.
 
-The Linux Desktop is moving into the right direction with Flatpak and its permission model, but it
-is still not quite there where I want it to be. Alternatives like [Qubes
-OS](https://www.qubes-os.org/) offer superior sandboxing, but it is very heavy and lacks GPU
-acceleration. I need something between these two worlds and libvirt VMs are fitting my needs.
+VMs run a minimal Alpine Linux system with Openbox as window manager.
 
 # Installation (Fedora)
 
@@ -22,9 +24,7 @@ Then follow the instructions located at the top of each file in `./host-configs/
 
 # Defining VMs
 
-Create a directory, e.g. in `./vm-configs/`, named after the VM to create and configure it as
-described below. Then run `./setup-vms.sh ./vm-configs/`. Here is an example config to be placed in
-`./vm-configs/YOUR_VM_NAME/config`:
+Create a directory, e.g. `./vm-configs/YOUR_VM_NAME/` and a file named `config` inside it:
 
 ```
 cores=8
@@ -33,8 +33,9 @@ disksize=16
 color=03bbaf
 sound+microphone
 internet
-root_tty2
 ```
+
+Then run `./setup-vms.sh ./vm-configs/`.
 
 ### Configuration flags
 
@@ -126,8 +127,8 @@ This script will send update commands to running VMs and keeps waiting for futur
 # Issues and limitations
 
 * Multi-touch mouse gestures are not forwarded to guest VMs
-* Fractional scaling on the host breaks VM window resizing. Set it to 100% or a multiple of it.
-  Configure the dpi in this file instead: `./files/home/Xresources`
+* Fractional scaling on the host breaks VM window resizing. Instead, change the dpi setting in
+  `./files/home/Xresources` before creating your VMs
 * Virt-viewer does not forward the F10 key to the VM when the mouse is outside the VM window, even
   if the window is focused
 * VMs without the `gpu` flag have a very small chance of freezing when e.g. dragging large windows
@@ -135,11 +136,27 @@ This script will send update commands to running VMs and keeps waiting for futur
 * On systems which remap capslock (e.g. to escape), it will cause the key to be [pressed
   twice](https://gitlab.freedesktop.org/spice/spice-gtk/-/issues/143). A workaround can be found
   here: <https://gitlab.freedesktop.org/spice/spice/-/issues/66>
-* Virt-viewer sometimes auto-attaches your external dock's audio device to VMs with webcam
-  permissions. You have to detach the device from the VM via the menu on the top left corner of the
-  virt-viewer window
 
 # FAQ
+
+## How secure are sandboxes created by these scripts?
+
+They may not be as paranoid as Qubes OS, but are still way stronger than the sandboxing used by
+Flatpak and modern web browsers.
+
+These scripts follow modern development practices and don't try to be smart. They are just a very
+thin configuration layer around libvirt. The actual security comes from the enormous amount of
+resources and millions of man-hours poured into hardening QEMU. Everything in this repository is
+designed to be as restrictive as possible by default. If a VM has no explicit clipboard or GPU
+permissions, it will never be able to access those.
+
+While the host can send commands to the guests, the guests will never be able to communicate with
+the host through the scripts provided by this repository. The only exception is the VMs setup
+process. It uses a signed Alpine image and only runs code which can be traced back to its origin.
+Once the installation is complete, guests will be treated like they're compromised from thereon. A
+guests home image or home directory can be stored separately and may contain clutter from previous
+usage. Therefore the homedir is not exposed to the VM during the entire setup process and only gets
+attached right after the installation has finished.
 
 ## How to recreate a VM from scratch?
 
@@ -179,9 +196,9 @@ See `./files/setup-alpine.cfg` and `./files/bin/openbox-custom-autostart.sh`.
 
 ## Do the scripts work with user session VMs?
 
-Not without code modifications. As a quick hack you can switch `LIBVIRT_DEFAULT_URI` to
-`qemu:///session` in the codebase. Note that attaching USB and PCI devices does not work in user
-session VMs.
+That requires changing `LIBVIRT_DEFAULT_URI` to `qemu:///session` in the codebase. A lot of the code
+will still apply system-session specific settings to the VM. Everything should work despite that,
+but these settings are overkill for plain user sessions.
 
 ## How to enable Vulkan acceleration for VMs?
 
