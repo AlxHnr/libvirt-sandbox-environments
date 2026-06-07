@@ -129,8 +129,11 @@ This script will send update commands to running VMs and keeps waiting for futur
 * Multi-touch mouse gestures are not forwarded to guest VMs
 * Fractional scaling on the host breaks VM window resizing. Instead, change the dpi setting in
   `./files/home/Xresources` before creating your VMs
+  ([#71](https://gitlab.com/virt-viewer/virt-viewer/-/work_items/71),
+  [#144](https://gitlab.com/virt-viewer/virt-viewer/-/work_items/144),
+  [#524](https://github.com/virt-manager/virt-manager/issues/524))
 * Virt-viewer does not forward the F10 key to the VM when the mouse is outside the VM window, even
-  if the window is focused
+  if the window is focused ([#173](https://gitlab.com/virt-viewer/virt-viewer/-/work_items/173))
 * VMs without the `gpu` flag have a very small chance of freezing when e.g. dragging large windows
   around. In that case they need a hard-reset
 * On systems which remap capslock (e.g. to escape), it will cause the key to be [pressed
@@ -219,12 +222,12 @@ Potential candidates and their issues:
 
 * Mutter: has deep hidden dependencies to gnome-shell, which breaks IBUS/keyboard layout switching
 * KWin: no viable screencast portal, xdg-desktop-portal-kde only works within Plasma
-* Weston: doesn't support runtime resolution switching:
-  - https://gitlab.freedesktop.org/wayland/weston/-/issues/339
-  - https://gitlab.freedesktop.org/wayland/weston/-/issues/341
-* Wlroots-based compositors like Labwc suffer from flipped mouse cursors:
-  - https://gitlab.com/qemu-project/qemu/-/work_items/2315
-  - https://gitlab.freedesktop.org/wlroots/wlroots/-/work_items/3921
+* Weston: doesn't support runtime resolution switching
+  ([#339](https://gitlab.freedesktop.org/wayland/weston/-/issues/339),
+  [#341](https://gitlab.freedesktop.org/wayland/weston/-/issues/341))
+* Wlroots-based compositors like Labwc suffer from flipped mouse cursors
+  ([#2315](https://gitlab.com/qemu-project/qemu/-/work_items/2315),
+  [#3921](https://gitlab.freedesktop.org/wlroots/wlroots/-/work_items/3921))
 
 ## How to attach devices like webcams or microphones to a VM?
 
