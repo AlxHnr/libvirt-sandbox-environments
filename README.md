@@ -161,6 +161,15 @@ guests home image or home directory can be stored separately and may contain clu
 usage. Therefore the homedir is not exposed to the VM during the entire setup process and only gets
 attached right after the installation has finished.
 
+### Host port access
+
+Starting with a7adf15, VMs use the passt network interface and behave like normal user programs on
+the host. This allows guests to connect to everything on the hosts 127.0.0.1. It widens the attack
+surface, so be aware of what the host is running (avahi, chrony, mdns). Solutions:
+
+* Switch back to bridge interface
+* Wait for [#888](https://gitlab.com/libvirt/libvirt/-/work_items/888) to be resolved
+
 ## How to recreate a VM from scratch?
 
 Delete the VM trough virt-manager and rerun `./setup-vms.sh ./vm-configs/`. To regenerate
