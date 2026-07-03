@@ -10,4 +10,8 @@ trap 'test $? = 0 || \
   if command -v flatpak >/dev/null; then
     flatpak --user update -y --noninteractive
   fi
+
+  if grep -qE '^UUID=\S+ /home/user ' /etc/fstab; then
+    doas /sbin/fstrim -v /home/user
+  fi
 } > "$logfile" 2>&1
